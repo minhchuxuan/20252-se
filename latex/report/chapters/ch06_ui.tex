@@ -1,0 +1,371 @@
+\chapter{User Interface Design}
+
+This chapter describes the user interface design of SHEO, following the five-step
+process taught in C07 Part 2: identify the \emph{context of use} $\rightarrow$ derive
+\emph{UI requirements} $\rightarrow$ produce a \emph{design} (information architecture
+and screen layouts) $\rightarrow$ build a \emph{prototype} $\rightarrow$ conduct
+\emph{usability evaluation}. Each section below corresponds to one step and maps its
+findings to the system's screens, navigation structures, and interaction patterns.
+
+% -----------------------------------------------------------------------
+\section{UI Design Process}
+\label{sec:ui-process}
+
+The interface design process followed in SHEO is the five-step model from the C07
+curriculum:
+
+\begin{enumerate}
+  \item \textbf{Identify context of use.}  Record who the users are, what environment
+        they work in, and on what platform — before any screen is drawn (Section~\ref{sec:ui-context}).
+  \item \textbf{Derive UI requirements.}  Translate the context, user goals, and the
+        seven golden rules into measurable usability targets and interaction constraints
+        (Section~\ref{sec:ui-requirements}).
+  \item \textbf{Design.}  Produce an information architecture (sitemap and user flow)
+        and low-fidelity wireframes for each screen
+        (Sections~\ref{sec:ui-ia} and~\ref{sec:ui-screens}).
+  \item \textbf{Prototype.}  Realise the wireframes as a working React single-page
+        application; the live implementation is the executable prototype.
+  \item \textbf{Evaluate.}  Assess the prototype against the golden rules (heuristic
+        walkthrough) and against measurable task criteria (task-based test), then feed
+        findings back into the design (Section~\ref{sec:ui-evaluation}).
+\end{enumerate}
+
+The process is intentionally iterative: the heuristic pass (step~5 applied to the
+initial design) surfaced two concrete improvements that were folded back into
+step~3 — surfacing the VND saving estimate \emph{before} the Save button is enabled,
+and adding a safety pill on safety-sensitive controls.
+
+% -----------------------------------------------------------------------
+\section{Context of Use and User Profiles}
+\label{sec:ui-context}
+
+\subsection{Context of use}
+
+SHEO is deployed for a single apartment building, whose units are each occupied by one
+resident.  Residents interact with it through a personal computer or a mobile-phone
+browser during ordinary domestic hours rather than during a fixed office shift, while the
+building owner uses it occasionally to oversee the building.  The platform is a
+\textbf{browser-hosted single-page application} (SPA): there is no native install, and
+interaction is by mouse and keyboard on desktop or by touch on mobile.  The information
+handled during a typical session includes live device power and energy figures, estimated
+and measured savings in Vietnamese dong (VND), automation rules, AI-derived
+recommendations, and the building-wide electricity tariff.
+
+Following the C01 stakeholder distinction, the project separates \emph{business
+stakeholders} who commission and fund the build from \emph{system actors} who operate
+the running software.  The Client (IoT contractor) falls in the first category and does
+not log in.  The Customer (building owner or landlord) operates SHEO as the
+Administrator actor, who owns no unit of their own; the tenants of the individual units
+operate it as Resident actors.
+
+\subsection{User profiles}
+
+Table~\ref{tab:user-profiles} summarises the three operative user classes, their
+characteristics, their primary interaction goals, and the consequence of an error for
+each class.  The consequence column drives the protection mechanisms described in
+Section~\ref{sec:ui-requirements}.
+
+\begin{table}[htbp]
+  \caption{User profiles for SHEO.}
+  \label{tab:user-profiles}
+  \begin{tabularx}{\linewidth}{@{} L{2.2cm} Y Y Y @{}}
+    \toprule
+    \textbf{User class} & \textbf{Characteristics} & \textbf{Goals / interaction intent}
+      & \textbf{Consequence of an error} \\
+    \midrule
+    Administrator (Customer) &
+      Building owner or landlord; owns no unit of their own; non-technical; occasional
+      user; motivated by the building's electricity bill. &
+      Oversee all units through a read-only building overview; set the building-wide
+      tariff and billing cycle; sell and onboard units. Never operates devices and
+      authors no rules. &
+      \textbf{High} — sets the building-wide tariff and onboards units.
+      Safeguarded by explicit confirmations and by read-only oversight of units. \\
+    \addlinespace
+    Resident (end-user / tenant) &
+      Tenant of one unit; mixed ages and abilities; views and controls only their own
+      unit's operable devices; sets up personal automation rules. &
+      Check own unit's consumption and savings; operate own unit's devices; author
+      automation rules; accept or dismiss recommendations. &
+      \textbf{Low–Medium} — can author rules (auto-action off by default) and control
+      own unit's devices; cannot change the tariff or access another unit
+      (\req{NFR-SEC-4}). \\
+    \addlinespace
+    Developer / Tester &
+      Technical; prepares and reproduces demos. &
+      Instantiate mock devices, exercise edge cases, force a device offline. &
+      \textbf{Contained} — changes are limited to the mock world. \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+% -----------------------------------------------------------------------
+\section{UI Requirements and the Seven Golden Rules}
+\label{sec:ui-requirements}
+
+\subsection{The seven golden rules applied to SHEO}
+
+The C07 UI curriculum specifies seven golden rules of interface design.
+Table~\ref{tab:golden-rules} lists each rule and its concrete realisation in SHEO.
+
+\begin{longtable}{@{} L{3.0cm} p{9.2cm} @{}}
+  \caption{The seven UI golden rules and their realisation in SHEO.}
+  \label{tab:golden-rules} \\
+  \toprule
+  \textbf{Golden rule} & \textbf{Realisation in SHEO} \\
+  \midrule
+  \endfirsthead
+  \multicolumn{2}{l}{\footnotesize\itshape (Table~\ref{tab:golden-rules} continued)} \\
+  \toprule
+  \textbf{Golden rule} & \textbf{Realisation in SHEO} \\
+  \midrule
+  \endhead
+  \bottomrule
+  \endfoot
+  Easy to learn &
+    The left navigation exposes every primary task from a single persistent menu;
+    the dashboard lands on the most important information (live power and cycle savings)
+    without any configuration.  A first-time Resident can operate a device in their unit
+    and see live telemetry within a few minutes. \\
+  \addlinespace
+  Familiar terms &
+    Domain language mirrors what residents already know: ``kWh today'', ``estimated
+    bill'', and ``savings so far this cycle'' are expressed in the user's billing
+    vocabulary rather than in software abstractions.  VND is used throughout for
+    monetary figures rather than a generic currency symbol. \\
+  \addlinespace
+  Consistency &
+    The \textbf{capability-driven control widget} is the central consistency benefit.
+    Because one generic component renders every device type from the capability schema
+    (\req{REQ-4.2.1}), the toggle, range slider, and segmented-enum interactions behave
+    identically regardless of whether the user is controlling a plug, a bulb, a fan, or
+    an air-conditioner.  There is no per-device-type UI code to learn or to diverge from
+    each other. \\
+  \addlinespace
+  Minimal surprise &
+    All destructive and automated actions are gated: auto-action on automation rules is
+    \emph{off by default} (\req{BR-3}); the rule editor shows the VND estimate and any
+    conflict warning \emph{before} the Save button is enabled; the Settings screen is
+    read-only for non-Administrators. \\
+  \addlinespace
+  Recoverable &
+    Two explicit recovery mechanisms are provided.  First, automation rules require the
+    user to opt in to auto-apply; absent that opt-in the system notifies but takes no
+    action, leaving the user in control.  Second, any rule firing that \emph{is}
+    auto-applied can be undone within a two-minute window (\req{REQ-4.3.6}).
+    Out-of-range or offline commands are rejected cleanly without changing device state. \\
+  \addlinespace
+  Feedback and help &
+    Every command returns an explicit three-valued outcome: \textsc{success},
+    \textsc{rejected}, or \textsc{timeout}.  The rule editor provides live validation and
+    conflict warnings as the user types.  Offline devices are badged on the dashboard.
+    The recommendations panel shows a rationale and a data-window label so users
+    understand why each suggestion was generated.  WebSocket push ensures the dashboard
+    reflects reality within five seconds (\req{NFR-PER-1}). \\
+  \addlinespace
+  Diverse users &
+    The interface uses the Okabe--Ito colour-blind-safe palette throughout; the
+    dashboard prominent headline-metric (large-numeral) pattern renders the key saving
+    figure large enough to read at a glance; domain wording mirrors what residents already
+    know; and the role-based access model ensures each actor sees only the controls
+    relevant to their role, reducing cognitive load. \\
+\end{longtable}
+
+\subsection{Measurable usability targets}
+
+In addition to the qualitative golden-rule analysis, the following measurable usability
+targets were established from the context-of-use analysis and serve as the acceptance
+criteria for the task-based evaluation in Section~\ref{sec:ui-evaluation}:
+
+\begin{itemize}
+  \item A user shall be able to send a control command to a device in $\le 3$ clicks
+        from the dashboard (\req{REQ-4.2.x}, \req{NFR-PER-2}).
+  \item UI feedback on every command outcome shall appear within the two-second
+        budget (\req{NFR-PER-2}).
+  \item A user shall be able to review a recommendation's rationale and VND figure
+        and act on it in $\le 2$ clicks.
+  \item The rule editor shall present the VND estimate and any conflict warning before
+        the Save button becomes active (\req{REQ-4.5.3}).
+  \item A first-time Resident shall be able to operate a device in their unit and see live
+        telemetry within a few minutes (\req{REQ-4.2.5}, \req{REQ-4.1.1}).
+\end{itemize}
+
+\subsection{Colour and accessibility}
+
+The Okabe--Ito palette is applied to all charts and status indicators.  The seven
+Okabe--Ito colours are distinguishable for the three most common types of colour-vision
+deficiency (deuteranopia, protanopia, and tritanopia), satisfying the ``diverse users''
+golden rule at the perceptual level.
+
+% -----------------------------------------------------------------------
+\section{Information Architecture and Navigation}
+\label{sec:ui-ia}
+
+\subsection{Sitemap}
+
+The application has a flat information architecture accessed through a
+persistent left navigation bar, with a device-detail sub-view opened from the devices
+screen.  The navigation is \textbf{role-aware}: a Resident or Developer sees the
+unit-scoped Dashboard, Devices, Rules, Recommendations, and Reports screens, whereas the
+Administrator sees a role-specific \textbf{Building} page (the units roster with totals
+and a read-only drill-in) in place of the single-unit Dashboard.  After authentication,
+every primary task for the actor's role is reachable in one click from the
+navigation, and every primary task other than Settings is reachable within one additional
+click from there.  The flat hierarchy minimises navigation depth, directly supporting the
+``easy to learn'' golden rule.  Figure~\ref{fig:sitemap} shows the complete sitemap.
+
+\fig{fig15-sitemap.png}{Sitemap of the SHEO single-page application.  After sign-in the shell exposes six top-level screens through the left navigation, plus a device-detail sub-view opened from the devices screen.  The rules screen opens a rule-editor overlay; the settings screen is read-only for non-Administrators (role-based access model, \req{BR-1}).  Every primary task is at most one click from the dashboard.}{fig:sitemap}
+
+The Settings screen deserves special note: the building-wide tariff configuration and
+unit-onboarding panels are visible to all authenticated users but are editable only by the
+Administrator (\req{BR-1}).  Non-Administrators see the same layout in a read-only state
+rather than a different screen, preserving layout consistency (``minimal surprise'').
+
+\subsection{User flow}
+
+The sitemap describes the static screen hierarchy; the user flow in
+Figure~\ref{fig:userflow} describes the dynamic paths a user takes to accomplish the
+three core journeys: controlling a device, acting on a recommendation, and authoring an
+automation rule.  The diagram makes the key decision points explicit: the capability
+fetch that precedes rendering, the three-valued command outcome, the accept-or-dismiss
+branch on recommendations, and the live validation gate on the rule editor.
+
+\fig{fig16-user-flow.png}{User flow for the three core journeys.  After sign-in the user lands on the Dashboard and chooses a journey: controlling a device (capability fetch $\rightarrow$ validate $\rightarrow$ \textsc{success}/\textsc{rejected}/\textsc{timeout}), acting on a recommendation (Accept $\Rightarrow$ becomes a rule; Dismiss $\Rightarrow$ 30-day suppression), or authoring a rule (live validation + conflict check + VND estimate before Save is enabled).}{fig:userflow}
+
+\subsection{Three core journeys}
+
+\begin{description}[style=nextline]
+  \item[Journey 1 — Monitor and control a device.]
+    From the Dashboard the user selects a device tile, the front-end requests the
+    device's capability description from the server, and the control widget is rendered
+    generically.  The user adjusts a control and the command flows through the
+    command-application pipeline, which returns \textsc{success},
+    \textsc{rejected}, or \textsc{timeout} with a human-readable message.
+
+  \item[Journey 2 — Review and act on a recommendation.]
+    The Recommendations screen presents up to five ranked suggestions, each showing a
+    human-readable \emph{when\ldots then\ldots} rule expression, a rationale, the data window
+    over which the habit was mined, and the estimated monthly saving in VND\@.
+    Accepting a recommendation promotes it to a normal automation rule; dismissing it
+    suppresses the same signature for 30 days (\req{REQ-4.4.5}).
+
+  \item[Journey 3 — Author an automation rule.]
+    The rule editor validates the rule in real time as the user constructs the
+    \emph{when\ldots then\ldots until\ldots} expression.  Conflicting enabled rules
+    are reported before the user can save.  The VND saving estimate is fetched from the
+    server and displayed in the editor; the Save button is not enabled until a
+    syntactically valid, conflict-free rule with a visible estimate is present.
+\end{description}
+
+% -----------------------------------------------------------------------
+\section{Screen Design (Wireframes)}
+\label{sec:ui-screens}
+
+Six application screens were designed and prototyped as wireframes before implementation.
+The wireframes are presented in Figures~\ref{fig:login}--\ref{fig:settings}.  All six
+screens follow the same visual language: a left navigation rail, the page title and
+primary action button in the top bar, and content laid out with a consistent spacing
+grid.  The Okabe--Ito palette is applied to all charts and status indicators.
+
+\medskip
+A defining design constraint applies to the device-control screens: \textbf{every
+control widget is rendered from the capability schema} (\req{REQ-4.2.1}).  The front-end
+never branches on device type.  When the user navigates to a device's detail screen, the
+front-end requests the device's capability description from the server and receives a
+structured schema listing the device's controls — each classified as a toggle, a bounded
+range, an enumeration, or a read-only readout — and the generic control component
+renders the appropriate widget for each entry.
+Adding a new device type to the system requires only a new capability schema entry —
+no new UI code.
+
+\figw{fig09e-login.png}{0.9}{Login screen.  Email and password sign-in establishes a session token held by the front-end for the duration of the session.  Four demo accounts (all with password \texttt{demo1234}) are accessible via pre-filled quick-login buttons, supporting the task-based evaluation: \texttt{admin@demo.com} (Administrator --- building owner with no unit, providing the building overview, tariff, and onboarding, and unable to operate devices), \texttt{resident@demo.com} (Resident of Unit~101, controlling that unit's devices), \texttt{resident2@demo.com} (Resident of Unit~102), and \texttt{dev@demo.com} (Developer/Tester on maintenance Unit~100).}{fig:login}
+
+\figw{fig09a-dashboard.png}{0.9}{Dashboard.  Prominent headline-metric (large-numeral) displays show the unit's total power (W), kWh consumed today and in the current billing cycle, estimated bill in VND, and \textbf{savings so far this cycle in VND}.  A live WebSocket consumption chart, per-device tiles with offline badges, and a top-consumers panel complete the view (\req{REQ-4.1.1}--\req{REQ-4.1.5}, \req{REQ-4.5.4}).}{fig:dash}
+
+\figw{fig09b-devices.png}{0.9}{Device detail screen.  Controls (on/off toggle, target temperature range, fan-speed enumeration) are generated entirely from the structured capability schema returned by the server — there is no per-device-type UI code.  Safety-sensitive controls carry a \emph{safety} warning pill (\req{NFR-SAF-3}); the fridge is safety-critical and not switchable, and the sensor is read-only.  The Resident operates only their own unit's operable devices, while the Developer/Tester can add or remove mock devices on the maintenance unit (\req{BR-1}).}{fig:devices}
+
+\figw{fig09c-rules.png}{0.9}{Rule editor.  A \emph{when\ldots then\ldots until} rule form with live validation, conflict detection, and the VND saving estimate displayed before Save is enabled (\req{REQ-4.3.x}, \req{REQ-4.5.3}).  Auto-apply is off by default (\req{BR-3}); the execution history shows past firings with a two-minute undo link (\req{REQ-4.3.6}).}{fig:rules}
+
+\figw{fig09d-recommendations.png}{0.9}{Recommendations screen.  Up to five ranked, human-readable suggestions are shown, each with the \emph{when\ldots then} rule expression, a rationale, the data window, and the estimated monthly saving in VND\@.  \emph{Accept} converts the recommendation into a normal rule; \emph{Dismiss} suppresses it for 30 days (\req{REQ-4.4.x}).}{fig:recs}
+
+\figw{fig09f-settings.png}{0.9}{Settings screen.  The building-wide tariff configuration (flat, tiered EVN, or time-of-use; amounts in VND) and the unit-onboarding panel are editable only by the Administrator; non-Administrators see this screen in a read-only state (\req{BR-1}, \req{BR-5}, \req{NFR-SEC-4}).}{fig:settings}
+
+% -----------------------------------------------------------------------
+\section{Usability Evaluation}
+\label{sec:ui-evaluation}
+
+Following the evaluation step of the UI design process, the interface is assessed in two
+passes: a formative heuristic walkthrough applied during development, and a summative
+task-based test applied at the milestone demonstration.
+
+\subsection{Heuristic walkthrough}
+
+Each screen is examined against the seven golden rules from
+Section~\ref{sec:ui-requirements}.  Rather than checking every screen independently, the
+walkthrough focuses on the \emph{single interaction pattern that spans all device types}
+— the capability-driven control widget — because validating one pattern validates the
+interaction on every current and future device type simultaneously.
+
+Two concrete design defects surfaced during this pass and were corrected before the
+implementation milestone:
+
+\begin{enumerate}
+  \item \textbf{VND estimate placement.}  An early iteration placed the saving estimate
+        below the Save button, making it easy to miss.  The corrected design disables
+        the Save button until the estimate has been fetched and displayed, forcing the
+        user to see the figure before committing.
+  \item \textbf{Safety visibility.}  Safety-sensitive controls (such as the AC compressor
+        toggle) were initially indistinguishable from ordinary controls.  The corrected
+        design adds a prominent \emph{safety} warning pill adjacent to any control that
+        the capability schema identifies as safety-sensitive (\req{NFR-SAF-3}).
+\end{enumerate}
+
+The heuristic pass also confirmed that auto-action defaulting to off (\req{BR-3}) and
+the two-minute undo window (\req{REQ-4.3.6}) together satisfy the ``recoverable'' golden
+rule for all three core journeys.
+
+\subsection{Task-based usability test}
+
+At the milestone demonstration, evaluators perform the four tasks in
+Table~\ref{tab:usability-tasks} using the four demo accounts, spanning the
+Administrator, Resident, and Developer/Tester roles.  For each task, successful completion is defined by a measurable
+criterion; any task that fails its criterion is treated as a defect and triggers a design
+revision before release.
+
+\begin{table}[htbp]
+  \caption{Task-based usability test: tasks and measurable success criteria.}
+  \label{tab:usability-tasks}
+  \begin{tabularx}{\linewidth}{@{} L{3.2cm} Y L{2.8cm} @{}}
+    \toprule
+    \textbf{Task (journey)} & \textbf{Measurable success criterion} & \textbf{Tied to} \\
+    \midrule
+    Control a device &
+      Reach a device's controls and send a command in $\le 3$ clicks from the dashboard;
+      the outcome (\textsc{success} / \textsc{rejected} / \textsc{timeout}) is shown
+      within the two-second UI-feedback budget. &
+      \req{REQ-4.2.x},\newline \req{NFR-PER-2} \\
+    \addlinespace
+    Review and act on a recommendation &
+      Read the \emph{when\ldots then} rule expression, rationale, and VND figure, then
+      Accept or Dismiss in $\le 2$ clicks; the VND figure is visible without scrolling. &
+      \req{REQ-4.4.x} \\
+    \addlinespace
+    Author a rule &
+      Build a valid rule and see its VND estimate \emph{before} Save is enabled; a
+      conflicting enabled rule is reported inline, not silently overwritten. &
+      \req{REQ-4.3.x},\newline \req{REQ-4.5.3} \\
+    \addlinespace
+    First-run onboarding &
+      A first-time Resident operates a device in their unit and observes live telemetry on
+      the dashboard within a few minutes of signing in to the unit. &
+      \req{REQ-4.2.5},\newline \req{REQ-4.1.1} \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+Error prevention and recoverability are tested explicitly as part of each task: an
+out-of-range or offline command must surface a clear rejection message and leave device
+state unchanged; the auto-action toggle must default to off; and any auto-applied rule
+firing must be undoable for two minutes.  Evaluation results are written up in a
+brief usability report; any failing task loops back into the design (re-layout, clearer
+labels, or additional feedback wording) before the release build is produced.

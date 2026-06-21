@@ -1,0 +1,59 @@
+\documentclass[11pt,a4paper,oneside]{report}
+\input{preamble}
+
+\begin{document}
+
+% ============================ TITLE PAGE ============================
+\begin{titlepage}
+\centering
+{\scshape\large Hanoi University of Science and Technology\par}
+{\scshape School of Information and Communication Technology\par}
+\vspace{0.4cm}
+{\large IT3180E — Introduction to Software Engineering\par}
+\vspace{2.2cm}
+{\color{accent}\rule{\linewidth}{1.2pt}}\par\vspace{0.5cm}
+{\Huge\bfseries AI-Driven Smart Home\\[0.2cm] Energy Optimizer (SHEO)\par}
+\vspace{0.5cm}
+{\Large Final Project Report\par}
+{\color{accent}\rule{\linewidth}{1.2pt}}\par
+\vspace{1.0cm}
+{\large A capability-driven IoT energy-management system with explainable\\
+WHEN--THEN automation and Vietnamese-dong bill-saving estimation\par}
+\vfill
+\begin{tabular}{rl}
+\textbf{Group} & \textit{$\langle$group name$\rangle$}\\[2pt]
+\textbf{Team leader} & \textit{$\langle$name --- student ID$\rangle$}\\[2pt]
+\textbf{Members} & \textit{$\langle$name --- ID$\rangle$, $\langle$name --- ID$\rangle$, \ldots}\\[2pt]
+\textbf{Instructor} & \textit{$\langle$instructor name$\rangle$}\\
+\end{tabular}
+\vspace{1.0cm}
+
+{\large Hanoi, \today\par}
+\end{titlepage}
+
+% ============================ FRONT MATTER ============================
+\pagenumbering{roman}
+\input{chapters/ch00_abstract}
+\tableofcontents
+\listoffigures
+\cleardoublepage
+\pagenumbering{arabic}
+
+% ============================ BODY ============================
+\input{chapters/ch01_introduction}
+\input{chapters/ch02_process}
+\input{chapters/ch03_management}
+\input{chapters/ch04_requirements}
+\input{chapters/ch05_design}
+\input{chapters/ch06_ui}
+\input{chapters/ch07_construction}
+\input{chapters/ch08_configuration}
+\input{chapters/ch09_quality}
+\input{chapters/ch10_conclusion}
+
+% ============================ BACK MATTER ============================
+\appendix
+\input{chapters/appendix_traceability}
+\input{chapters/references}
+
+\end{document}

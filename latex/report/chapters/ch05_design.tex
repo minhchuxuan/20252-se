@@ -1,0 +1,442 @@
+\chapter{Software Architecture and Design}\label{chap:design}
+
+This chapter realises the first half of Lecture~C07 (Software Design). Where the
+requirements chapter states \emph{what} the AI-Driven Smart Home Energy Optimizer
+(SHEO) must do, this chapter states \emph{how} the system is structured to deliver
+it: the design goals that govern every decision (\S\ref{sec:design-goals}), the
+architectural style and its alternatives (\S\ref{sec:architecture}), the component
+and class decomposition (\S\ref{sec:components}--\S\ref{sec:classes}), the
+design patterns that give the structure its flexibility
+(\S\ref{sec:patterns}), the detailed behaviour of the two central control paths
+(\S\ref{sec:behaviour}), and finally the two subsystems that constitute the
+intellectual heart of the product (\S\ref{sec:heart}). Throughout, the design is
+presented in the conceptual vocabulary of the course, transforming the analysis
+model into a design model in the sense of ISO/IEC/IEEE~12207.
+
+\section{Design goals}
+\label{sec:design-goals}
+
+The design is governed by the four fundamental concepts taught in C07: abstraction,
+modularity, the cohesion/coupling balance, and information hiding. These are not
+abstract ideals here; each is realised by a concrete mechanism in SHEO. The system
+is decomposed into modules that each own a single capability (high cohesion) and
+communicate through narrow, intention-revealing interfaces (low coupling), so that
+a change to one capability does not ripple across the others. Abstraction is applied
+twice over: device behaviour is abstracted behind a uniform adapter interface, and
+device \emph{description} is abstracted into a declarative capability schema, so that
+neither the user interface nor the validation logic ever names a concrete device
+model. Information hiding is the organising principle of the data tier: every detail
+of persistence is sealed behind repository interfaces, so that business logic remains
+ignorant of, and therefore independent of, the storage technology.
+
+Table~\ref{tab:design-goals} maps each design concept to the SHEO mechanism that
+embodies it. This mapping is what makes the qualities verifiable rather than merely
+asserted.
+
+\begin{table}[htbp]
+\centering
+\caption{Each C07 design concept and the SHEO mechanism that realises it.}
+\label{tab:design-goals}
+\begin{tabularx}{\textwidth}{L{0.20\textwidth} Y Y}
+\toprule
+\textbf{Design concept} & \textbf{What it requires} & \textbf{SHEO mechanism} \\
+\midrule
+Abstraction &
+Suppress per-instance detail behind a general interface. &
+The device-adapter interface abstracts device behaviour; the capability
+schema abstracts a device type into data, so callers never branch on a concrete
+model. \\
+Modularity &
+Partition the system into independently buildable, testable parts. &
+A layered backend (API $\to$ services $\to$ repositories $\to$ domain) plus one
+cohesive service per capability (devices, rules, optimisation, recommendations,
+telemetry). \\
+High cohesion / low coupling &
+Each module has one reason to change; modules interact narrowly. &
+Each service owns exactly one capability; producers and consumers are decoupled by
+an in-process event bus, so a new consumer is added without touching producers. \\
+Information hiding &
+Hide volatile design decisions behind stable interfaces. &
+Repositories hide all query construction and the storage engine; the capability
+schema hides device-type variance from both the front-end and the capability-validation routine. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Architectural design}
+\label{sec:architecture}
+
+\subsection{The architectural style}
+
+SHEO is a \textbf{three-tier client--server} application whose server interior
+composes three further architectural styles taught in C07, each selected to satisfy
+a specific quality goal:
+
+\begin{enumerate}[leftmargin=1.4em]
+  \item \textbf{Three-tier client--server.} Presentation (a browser-based
+  single-page application), application logic (a Python application server), and data
+  (a relational store) are cleanly separated, giving independent deployability and a
+  single, well-defined transport boundary over HTTPS and secure WebSockets.
+  \item \textbf{Layered architecture} inside the server. Dependencies point
+  \emph{strictly downward}: API routers depend on services, services on
+  repositories, repositories on the domain model and the object-relational mapping.
+  No router issues a database query and no service imports the web framework, so each
+  layer is replaceable and unit-testable in isolation.
+  \item \textbf{Repository (data-centred) style} at the persistence boundary. Query
+  construction is hidden behind intention-revealing methods, which also enforce
+  unit-scoping for access control; a tariff repository additionally falls back to
+  the building-wide tariff when a unit has no override.
+  \item \textbf{Event-driven (Observer) integration} inside the server. An in-process
+  event bus decouples event producers (the simulator, the rule engine, the device
+  service) from consumers (the live-feed broadcaster and the notification service),
+  so new consumers can be added without modifying producers --- a direct application
+  of the open/closed principle.
+\end{enumerate}
+
+The client itself follows an \textbf{MVC} flavour: the REST and WebSocket payloads
+are the Model, the page components are the View, and the authentication context
+together with the event handlers act as the Controller. The capability-driven control
+component is a pure View rendered over the capability schema, which serves as its
+Model. Figure~\ref{fig:arch} shows the resulting three-tier and layered structure,
+and the strict downward dependency rule that governs it.
+
+\fig{fig02-architecture.png}{Three-tier and layered architecture. Dependencies point
+strictly downward (presentation $\to$ application $\to$ data); no router runs a
+database query and no service imports the web framework.}{fig:arch}
+
+\subsection{The strict downward-dependency rule}
+
+The single invariant that keeps the layered design honest is that a layer may depend
+only on the layers beneath it, never on a peer or a layer above. The presentation
+tier knows the application tier but not the database; the application tier knows the
+repository abstraction but not the SQL dialect behind it; the data tier knows nothing
+of the web. This invariant is what makes the headline maintainability claim true: a
+change of storage engine is localised to the data tier, and a change of transport is
+localised to the presentation tier, because no business rule has been allowed to leak
+into either.
+
+\subsection{Alternatives considered}
+
+Two architectural decisions deserve an explicit record of the alternatives weighed,
+in the spirit of the C07 candidate-assessment step.
+
+\begin{itemize}[leftmargin=1.4em]
+  \item \emph{In-process event bus versus an external message broker.} A broker
+  (for example a message queue or an MQTT bus) would permit horizontal scaling but
+  would force an external infrastructure dependency that a single-node course demo
+  cannot assume. SHEO instead runs its simulator and scheduler as in-process
+  asynchronous tasks that communicate over an in-process publish/subscribe bus.
+  Because producers and consumers already talk through that publish/subscribe seam,
+  a future move to a real broker would replace only the transport, not the
+  producers or consumers.
+  \item \emph{Layered monolith versus microservices.} Microservices were rejected as
+  over-engineering for the scope. A layered monolith delivers most of the modularity
+  benefit --- clear seams, independent testability, localised change --- at a small
+  fraction of the operational cost, which is the correct trade-off on the
+  function/cost/time triangle for a system of this size.
+\end{itemize}
+
+\subsection{Deployment}
+
+The demonstration deployment is a \textbf{single application node} hosting the
+application server, together with a single embedded database file on a local volume;
+the browser is the only client node. The simulator and the scheduler are not separate
+processes but background tasks within the application's lifespan --- which is exactly
+why the simulator can publish telemetry straight onto the same in-process bus that the
+WebSocket broadcaster listens on, with no broker in between. A production variant would
+swap the embedded database for a networked relational server and run several worker
+processes behind a TLS-terminating reverse proxy; the layered design localises that
+change to the data tier and the deployment topology, leaving the application logic
+untouched. Figure~\ref{fig:deploy} shows this topology.
+
+\fig{fig03-deployment.png}{Deployment diagram. A single application node serves the
+browser-based front-end over HTTPS and secure WebSockets and persists to a local
+embedded database; the simulator and scheduler are in-process background tasks, not
+separate hosts.}{fig:deploy}
+
+\section{Component decomposition}
+\label{sec:components}
+
+The decomposition opens the black box of the use-case view and divides the system
+along two orthogonal axes: \emph{by tier/layer} (presentation, application, data),
+which yields the strict downward dependency flow, and \emph{by cohesion}, so that
+each application-tier service owns exactly one capability and therefore has a single
+reason to change. Figure~\ref{fig:package} shows the resulting package structure,
+listed in dependency order so that each package depends only on those below it.
+
+\fig{fig05-package.png}{Package and layered decomposition. Each package may depend
+only on those below it --- the strict downward flow of the layered
+architecture.}{fig:package}
+
+The principal packages are as follows. The \textbf{presentation layer} holds the thin
+routers and the dependency-injection helpers; each router validates a request,
+resolves the authenticated user, calls exactly one service method, and returns a
+data-transfer object. A small set of Administrator-only, read-only routes
+(\texttt{GET /api/admin/overview} and the per-unit \texttt{/api/admin/units/\{id\}}
+drill-in routes) sits alongside the per-unit routers and is guarded by the role
+dependency. The \textbf{services layer} holds all business logic, one
+cohesive service per capability, including the Administrator service that assembles
+the building overview by reusing the per-unit telemetry service. The \textbf{cross-cutting layer} holds cross-cutting
+concerns: the event bus, the security primitives, a single clock source, and a
+framework-free domain-error hierarchy. The \textbf{device-adapter package} holds the
+device-adapter interface hierarchy that encapsulates per-device-type behaviour. The
+\textbf{simulator} and the \textbf{scheduler} are the two background workers --- the
+former generating telemetry, the latter firing rules and accruing savings. The
+\textbf{persistence layer} is the only layer that issues database queries, and the
+\textbf{domain layer} holds the capability schema, the enumerations, and the
+object-relational aggregates that form the structural foundation.
+
+Crucially, the front-end reaches the server through exactly \textbf{two ports} and no
+others: a \textbf{REST} port for request/response interaction, and a
+\textbf{WebSocket} port for the live feed of telemetry and notifications. This narrow
+contract is what allows the entire front-end to be developed and tested against a
+stable, documented surface. Figure~\ref{fig:component} shows the component wiring:
+routers depend on services through dependency injection, services depend on
+repositories and adapters, and only the data tier touches the database. The event
+bus is the integration hub --- the simulator and the device-control, rule, and
+recommendation services publish to it, while the notification service and the
+WebSocket connection manager subscribe.
+
+\fig{fig07-component.png}{Component diagram. The front-end reaches the server only
+through the REST and WebSocket ports. The event bus is the integration hub: the
+simulator and the device-control, rule, and recommendation services publish, while
+the notification service and the WebSocket connection manager subscribe.}{fig:component}
+
+\section{Class design}
+\label{sec:classes}
+
+The static model, shown in Figure~\ref{fig:class}, is organised around the
+\textbf{entity/boundary/control} separation taught in C07. \emph{Entity} classes
+(the object-relational aggregates, with the unit (a Home occupied by one Resident) as the aggregate root) hold
+persistent state; \emph{boundary} classes (the routers and the capability-driven
+control component) mediate interaction with the outside world; and \emph{control}
+classes (the services) coordinate the work. This separation keeps presentation,
+coordination, and state from contaminating one another.
+
+\fig{fig06-class.png}{Class diagram. The unit (a Home occupied by one Resident) is the aggregate root; the
+device-adapter interface hierarchy and the capability-schema value objects
+drive device behaviour and command validation. The user--device control grant is
+reified by an explicit permission class, and the rule-to-execution dependency is
+deliberately non-cascading so that deleting a rule preserves its audit
+trail.}{fig:class}
+
+The control responsibilities are partitioned across six key services, each cohesive
+and singly responsible:
+
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{Device-control service} --- the single, uniform pipeline for device
+  control and the \emph{single safety choke point}. Manual commands, rule-fired
+  commands, and recommendation acceptances all flow through one command-application
+  entry point, so the offline check, capability validation, and safety check cannot be
+  bypassed by any caller. It returns a structured result indicating success, rejection,
+  timeout, or a skipped no-op.
+  \item \textbf{Rule engine} --- authoring, validation, conflict detection, evaluation,
+  execution, and undo of the \textsc{when}--\textsc{then}--\textsc{until} automation
+  rules. Validation checks an action against the device capability schema and detects
+  time-overlapping opposing rules; execution is idempotent and rate-limited, dispatches
+  through the device-control service only when auto-action is enabled, logs an immutable
+  execution record, and supports a short undo window.
+  \item \textbf{Optimisation/bill-saving service} --- the deterministic, explainable
+  estimation engine. It computes the historical baseline, estimates a rule's monthly
+  saving in Vietnamese đồng (VND), accrues measured savings into the current billing
+  cycle, and flags rules whose measured saving drifts from the estimate.
+  \item \textbf{Recommendation service} --- mines daily habits from telemetry into
+  human-readable \textsc{when}--\textsc{then} suggestions with a rationale and a VND
+  estimate, ranks and caps them, turns an accepted suggestion into a rule, and
+  suppresses a dismissed one by signature.
+  \item \textbf{Telemetry service} --- produces the dashboard aggregate, the
+  unit-scoped consumption time-series, the top-consumers ranking, and the
+  online/offline refresh that marks a device unreachable after a silence threshold.
+  \item \textbf{Administrator service} --- serves the building owner's read-only oversight.
+  It builds the \emph{building overview} (the resident roster with each unit's live power,
+  cycle kWh, and bill, plus building-wide totals) and resolves a unit for the
+  Administrator-only per-unit drill-in, raising a not-found error for an unknown unit. It
+  reuses the per-unit telemetry service rather than duplicating its aggregation (DRY), and
+  authors no rules and operates no devices.
+\end{itemize}
+
+\section{Design patterns}
+\label{sec:patterns}
+
+Five design patterns give the structure its flexibility; each is realised by a
+concrete component and, where natural, advances a SOLID principle. Strategy, Observer,
+and State are classical Gang-of-Four (GoF) behavioural patterns; Repository and
+Dependency Injection are architectural patterns from Fowler's \emph{Patterns of
+Enterprise Application Architecture} and the Dependency-Inversion Principle
+respectively. Table~\ref{tab:patterns} records the pattern, its intent, and its
+realisation in SHEO.
+
+\begin{table}[htbp]
+\centering
+\caption{Design patterns realised in SHEO, with the SOLID principle each advances.
+Strategy, Observer, and State are GoF behavioural patterns; Repository is an
+architectural pattern; Dependency Injection follows the Dependency-Inversion
+Principle.}
+\label{tab:patterns}
+\begin{tabularx}{\textwidth}{L{0.16\textwidth} L{0.30\textwidth} Y}
+\toprule
+\textbf{Pattern} & \textbf{Intent} & \textbf{Realisation in SHEO} \\
+\midrule
+Strategy (GoF) &
+Encapsulate a family of interchangeable behaviours behind one interface. &
+The device-adapter interface hierarchy (one strategy per device type) encapsulates each
+type's command semantics and power model, so no code branches on type. Adding a device
+type adds a strategy without editing callers --- the open/closed principle (OCP). \\
+Observer (GoF) &
+Notify dependents of state changes without coupling them to the source. &
+The in-process event bus: producers publish typed events; the notification service and
+the WebSocket broadcaster subscribe. New observers are added without touching
+publishers. \\
+Repository (Fowler) &
+Mediate between the domain and the data source via a collection-like interface. &
+A generic repository plus one repository per aggregate hides all query construction and
+the storage engine, keeping business logic persistence-agnostic. \\
+Dependency Injection (DIP) &
+Supply a component's collaborators from outside rather than constructing them within. &
+The dependency-injection helpers provide a ready database session, the current user, and
+role guards to each router. Routers depend on abstractions rather than concrete
+constructions --- a direct application of the Dependency-Inversion Principle, and the
+structural basis of role-based access control. \\
+State (GoF) &
+Let an object alter its behaviour as its internal state changes. &
+The rule and execution lifecycles are modelled as explicit states (for example a rule
+moving through draft, enabled, and disabled; an execution through applied, undone, and
+expired), so behaviour follows the lifecycle rather than scattered conditionals. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Detailed behaviour}
+\label{sec:behaviour}
+
+Two sequence diagrams capture the dynamic behaviour of the system's two principal
+control paths. Figure~\ref{fig:seq-control} traces the \textbf{capability-driven
+control} path. When a user operates a device, the front-end first fetches the
+device's capability schema and renders the appropriate control widget from it; the
+resulting command is sent to the server, where the device-control service authorises
+the caller, validates the command against the same capability schema, runs the safety
+check, asks the device's strategy adapter to apply the state change, publishes a
+\emph{command-applied} event, and returns a structured result. The WebSocket
+broadcaster, subscribed to the bus, then pushes the new state to every connected
+front-end. The same path serves manual, rule-fired, and recommendation-driven
+commands, which is what makes the safety guarantee non-bypassable.
+
+\fig{fig10-seq-control.png}{Sequence: capability-driven device control. The command is
+validated against the same capability schema used to render the control, then applied
+through the device-adapter interface, and the new state is broadcast over the event
+bus to all connected front-ends.}{fig:seq-control}
+
+Figure~\ref{fig:seq-rule} traces the \textbf{automatic rule-firing} path driven by
+the scheduler. On each tick the scheduler asks the rule engine to evaluate each
+enabled rule; when a rule's \textsc{when} condition holds and the device is not
+already in the target state, the engine dispatches the action through the
+device-control service (only if auto-action is enabled for that rule), writes an
+immutable execution record, and publishes a \emph{rule-fired} event. The
+notification service, observing that event, persists a notification and re-publishes
+it for the broadcaster, so the user sees the automated action and retains a short
+window in which to undo it.
+
+\fig{fig11-seq-rule-firing.png}{Sequence: automatic rule firing. The scheduler
+evaluates an enabled rule; when its condition holds, the engine dispatches through the
+same control pipeline, logs an immutable execution, and the firing is observed by the
+notification service and broadcast to all connected front-ends.}{fig:seq-rule}
+
+\section{The two heart subsystems}
+\label{sec:heart}
+
+Two subsystems carry the product's distinctive value and therefore warrant detailed
+treatment: the capability schema, which makes the system extensible without
+per-model code, and the bill-saving estimation algorithm, which makes every saving
+figure transparent and verifiable.
+
+\subsection{The capability schema: a single source of truth}
+
+The capability schema is the design device that lets SHEO support an open-ended set of
+device types without writing a screen or a validator for each. A device type is
+described declaratively as data, not as code branches. A \emph{control} value object
+describes one controllable feature by its name, label, and \emph{kind} --- one of
+toggle, range, enumeration, or read-only --- together with the bounds (minimum,
+maximum, step), the permitted values, the default, and a flag marking the control as
+safety-sensitive. A \emph{capability schema} lists a device type's telemetry channels
+and its controls, plus whether the type is reversible, whether it is safety-critical by
+default, and its nominal power draw. A registry holds exactly one schema per device
+type.
+
+The decisive property is that this single description \textbf{drives two consumers at
+once}. The front-end renders its control widgets directly from the schema --- a toggle
+for a toggle control, a slider for a range, a segmented selector for an enumeration
+--- so the user interface never names a concrete device model. The server validates
+every incoming command against the \emph{same} schema before dispatching it, using
+the same capability-validation routine on both the manual and the rule-fired path.
+Because rendering and validation read one definition, they can never disagree: a
+control the interface offers is exactly a control the server accepts, with exactly the
+bounds the interface enforced. Adding a new device type is therefore a two-element
+change --- one schema entry and one device adapter --- with no edit to any router,
+service, or screen.
+
+Table~\ref{tab:capability-example} illustrates the structure of a schema entry for a
+representative device type (a room air-conditioner), showing the three controllable
+features it exposes.
+
+\begin{table}[htbp]
+\centering
+\caption{Capability schema entry for a room air-conditioner. Each row describes one
+controllable feature: its kind determines how the front-end renders the widget; its
+bounds constrain the accepted values; the safety flag causes the capability-validation
+routine to apply an additional safety check before dispatch.}
+\label{tab:capability-example}
+\begin{tabularx}{\textwidth}{L{0.16\textwidth} L{0.15\textwidth} Y L{0.18\textwidth}}
+\toprule
+\textbf{Control} & \textbf{Kind} & \textbf{Bounds / permitted values} & \textbf{Safety-sensitive} \\
+\midrule
+Power & Toggle & \{on, off\}; default: off & No \\
+Target temperature & Range & 16--30\,\textdegree C, step 1\,\textdegree C; default: 26 & Yes \\
+Operating mode & Enumeration & \{cool, fan, dry, auto\}; default: cool & No \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{The bill-saving estimation algorithm}
+
+The second heart subsystem is the explainable estimation of a rule's monetary saving,
+which the design constraint requires to be transparent rather than a black box. Every
+estimate reduces to one formula, summed over the hours a rule affects:
+
+\begin{equation*}
+\begin{split}
+  \text{saved\_vnd}
+  \;=\;
+  \sum_{h \,\in\, \text{affected hours}}
+  \bigl(&\,\text{baseline\_kWh}_h - \text{expected\_kWh\_with\_rule}_h\,\bigr) \\
+  &\times \text{tariff\_VND\_per\_kWh}.
+\end{split}
+\end{equation*}
+
+The estimate is computed in three transparent steps.
+
+\begin{enumerate}[leftmargin=1.4em]
+  \item \textbf{Baseline.} For the device in question, the system computes an
+  \emph{hourly} profile of average energy use --- the mean kilowatt-hours consumed in
+  each hour of the day --- over the previous \textbf{14 days}. Summing the profile over
+  the hours the rule affects gives the baseline energy that the rule will act upon.
+  \item \textbf{Expected use with the rule.} A transparent per-action model derives what
+  the device would draw \emph{if the rule were in force}. Switching a device off yields
+  zero expected energy; raising an air-conditioner target by a degree applies a fixed
+  saving fraction per degree (capped); reducing a fan speed or a bulb brightness scales
+  the energy by the ratio of the new setting to the current one. Each rule of thumb is
+  documented, so a reader can reproduce the figure by hand.
+  \item \textbf{Pricing.} The avoided energy --- the baseline minus the expected use,
+  floored at zero --- is multiplied by the effective tariff price in VND per
+  kilowatt-hour, resolved from the building-wide tariff set by the Administrator (flat,
+  tiered, or time-of-use), falling back to it when a unit has no override. The daily
+  saving is projected to a month for display.
+\end{enumerate}
+
+The design property that matters most is \emph{when} the figure is shown: the estimated
+VND saving is presented to the user \textbf{before a rule is accepted}, so that a saving
+is a promise the user can weigh, not a surprise discovered later. Each estimate is
+accompanied by a plain-language explanation naming the baseline, the expected use, and
+the price, closing the loop on the explainability constraint. After a rule is in force,
+the scheduler accrues the \emph{measured} saving per billing cycle and flags any rule
+whose measured saving drifts materially from its estimate, so the promise is
+subsequently checked against reality.

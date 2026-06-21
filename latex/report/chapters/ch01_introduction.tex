@@ -1,0 +1,193 @@
+\chapter{Introduction}
+
+\section{Project Overview and Motivation}
+
+This report documents the design and construction of the \textbf{AI-Driven Smart
+Home Energy Optimizer} (hereafter \textbf{SHEO}), a software system developed for the
+course IT3180E, \emph{Introduction to Software Engineering}. SHEO models a single
+apartment building and helps each unit's resident understand and reduce its electricity
+bill, while the building owner oversees the building as a whole. It performs four closely
+related tasks. First, it \emph{monitors} the real-time power and cumulative energy of every
+device in a unit. Second, it offers \emph{capability-driven control}: rather than hard-coding a
+separate screen for each appliance, the system describes each device type by a
+declarative schema of its controls and telemetry, and the same interface renders and
+validates commands for a plug, a bulb, a fan, an air-conditioner, or a sensor without
+per-device code. Third, it \emph{learns daily habits} from the observed usage and
+proposes human-readable automation rules of the form \textbf{WHEN \dots\ THEN \dots},
+each of which the user can read, edit, accept, or dismiss. Fourth---and this is the
+headline contribution that the client singled out---it \emph{estimates and displays the
+Vietnamese-dong saving} that each rule is expected to deliver, shown \emph{before} the
+rule is accepted, and then reports the saving actually accrued over the current billing
+cycle.
+
+The motivation is concrete and topical. Residential electricity costs in Vietnam follow
+a tiered tariff in which the marginal price rises with consumption, so even small,
+habitual waste compounds into a noticeably larger monthly bill. Residents are willing
+to automate their appliances, but they are reluctant to trust automation they cannot
+understand or whose benefit they cannot quantify. SHEO therefore treats
+\emph{explainability and monetary visibility} as first-class requirements: every
+suggestion is a sentence a non-expert can read, and every saving figure reduces to one
+transparent formula expressed in VND. The project's purpose is to demonstrate that a
+modest, fully working system, engineered with discipline, can deliver this value
+end-to-end.
+
+\section{Software Engineering Context}
+
+SHEO is, before anything else, an exercise in software engineering, and the report is
+structured to make that discipline visible. The course adopts the canonical definition
+introduced in Lecture C01 (\emph{Overview of Software Engineering}): software
+engineering is the body of \emph{methodologies, techniques, and tools} integrated into
+the software production and operation process in order to create software \emph{of the
+desired quality}. The same lecture frames software engineering as a layered activity:
+a foundational \emph{quality focus} supports a \emph{process}, which is enacted through
+\emph{methods}, which are in turn supported by \emph{tools}. This report is organised
+along exactly that layering---the process and management chapters establish the process
+layer, the requirements, design, and construction chapters supply the methods, and the
+configuration-management and quality-assurance chapters anchor the quality focus.
+
+A second principle from C01 governs the report throughout: the strict separation of
+\emph{requirements} from \emph{design}---of \emph{what} the system must do from
+\emph{how} it does it. Accordingly, the requirements chapter states only the observable
+behaviour the system must exhibit, while the design and construction chapters describe
+the architecture, components, and code that realise that behaviour. Keeping the two
+apart is what makes the chain from requirement to design to code to test auditable,
+which is itself a quality property the course grades.
+
+\section{The Client and the Stakeholders}
+
+Lecture C01 insists on a distinction that is easy to blur in everyday speech but
+essential to requirements work: the \textbf{Client} (the party for whom the software is
+built and who funds it), the \textbf{Customer} (the party who purchases or selects the
+software for use within an organisation), and the \textbf{User} (the person who actually
+operates the software day to day). C01 notes that customer satisfaction is the single
+most important measure of a project's success, so identifying these roles correctly is
+not a formality---it determines whose concerns the design must privilege.
+
+The roles for SHEO were fixed in the initial client session. The \textbf{Client is an
+IoT contractor}: it manufactures and supplies the smart devices, builds the underlying
+artificial-intelligence capability, and commissions this development team to build the
+application that ties the two together. The Client funds the work and sets the
+priorities but does not itself operate the running system; it is therefore a
+\emph{business stakeholder outside the system boundary}, not a login actor. The
+\textbf{Customer} is the \emph{building owner or landlord} that adopts SHEO
+and runs it for a single apartment building; in the running system the Customer is realised as the
+\textbf{Administrator} actor, who owns no unit of their own but oversees every unit---viewing
+the resident roster, each unit's live power and usage, and the building totals---sells and
+onboards units to residents, and sets the building-wide tariff and billing cycle. The
+Administrator never operates a unit's devices and authors no automation rules. The
+\textbf{End-users} are the \textbf{Residents} (tenants), each occupying one unit, who view
+their own unit's consumption and savings, control the operable devices in that unit, and
+author their own automation rules, with no visibility of any other unit. Two further actors
+complete the picture: a \textbf{Developer/Tester}, who prepares and reproduces the
+demonstration, and a non-human \textbf{System Scheduler}---a time actor that
+autonomously evaluates and fires rules and mines usage habits. The relationship between
+the external stakeholders and the system is shown in Figure~\ref{fig:context}.
+
+\fig{fig01-context}{System context overview. The three human actors---Administrator
+(the Customer / building owner), Resident (tenant of a unit), and Developer/Tester---interact
+with SHEO. The Client (IoT contractor) is a business stakeholder \emph{outside} the
+boundary that commissions and funds the build. A mock simulator stands in for physical
+devices, and the building-wide tariff is configured by the Administrator. The outputs returned to
+users are the live dashboard, notifications, explainable rules, and VND savings.}{fig:context}
+
+Table~\ref{tab:stakeholders} summarises each stakeholder, the role it plays with
+respect to the system, and its principal concern. The most consequential entry is the
+Customer's: in the client session the contractor assigned \emph{high priority} to the
+requirement that the Customer be able to \emph{see the actual VND bill saved} by a
+suggested rule. That single priority shapes much of the rest of the report---it drives
+the bill-saving estimation engine, the explainability constraint, and the
+headline-figure layout of the dashboard.
+
+\begin{table}[htbp]
+\centering
+\caption{SHEO stakeholders, their roles with respect to the system, and their primary
+concerns.}
+\label{tab:stakeholders}
+\begin{tabularx}{\linewidth}{L{2.6cm} L{4.4cm} Y}
+\toprule
+\textbf{Stakeholder} & \textbf{Role} & \textbf{Primary concern} \\
+\midrule
+Client (IoT contractor) & Commissions and funds the build; supplies devices and the
+underlying AI. Business stakeholder, \emph{not} a system actor. & A demonstrable
+product that proves its value, especially the monetary saving the Customer can see. \\
+\addlinespace
+Customer (building owner / landlord) & Adopts and operates SHEO; realised
+as the \textbf{Administrator} actor, who owns no unit and oversees all of them. & A
+building overview---the resident roster, every unit's usage, and building totals;
+selling and onboarding units; and setting the building-wide tariff. \\
+\addlinespace
+End-user (Resident / tenant) & Day-to-day operator of one unit; the \textbf{Resident}
+actor. & A clear at-a-glance view of the unit's own consumption and savings, and simple
+control of that unit's operable devices. \\
+\addlinespace
+Developer / Tester & Prepares and reproduces the demonstration. & A deterministic,
+reproducible system that is easy to exercise and test. \\
+\addlinespace
+System Scheduler & Non-human time actor inside the system. & Reliable, periodic
+evaluation of rules and mining of habits. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Scope and Objectives}
+
+The objective of the project is to deliver, with full software-engineering rigour, the
+five capabilities the client requested. These define the \emph{in-scope} functionality:
+(1) real-time monitoring of device power and energy; (2) capability-driven device
+control; (3) explainable WHEN--THEN automation rules with an opt-in auto-action;
+(4) habit-learning recommendations derived from observed usage; and (5) estimation and
+reporting of the VND bill saving of each rule. Each capability maps to a feature group
+in the requirements specification and is traced through design, construction, and test.
+
+Two deliberate exclusions place the work \emph{out of scope}. First, no physical IoT
+hardware is used: real plugs, bulbs, fans, air-conditioners, and sensors are unavailable
+to the team, so a \textbf{mock device simulator} stands in for them. The simulator
+implements the same device interface that a real vendor integration would, so the
+architecture remains hardware-ready, but the running product is demonstrable and
+testable entirely in software. Second, the ``AI'' is intentionally \emph{not} a
+black-box machine-learning model. It is an \textbf{explainable, rule-based} engine: every
+learned habit surfaces as a rule the user can read and every saving figure reduces to a
+documented formula. Opaque models were excluded precisely because they would defeat the
+client's high-priority demand that the saving be \emph{visible and trustworthy}.
+
+Both decisions follow directly from the \emph{Function / Cost / Time} balance triangle
+that C01 places at the heart of project scoping. Procuring and integrating real hardware
+would inflate cost and time for no gain in the demonstrated function, whereas a
+deterministic simulator delivers the same observable behaviour within the course
+timeline. Likewise, a learned black-box model would raise development cost and risk while
+\emph{reducing} the function the client values most---the explainable VND saving. In both
+cases the chosen scope maximises the function that matters while respecting the cost and
+time available, which is exactly the trade-off C01 asks an engineer to make explicit.
+
+\section{Report Structure}
+
+The remaining chapters follow the software-engineering lifecycle and are each anchored to
+a specific course lecture, so that the report doubles as a demonstration of the course
+material applied to a single coherent system. Table~\ref{tab:roadmap} maps each chapter
+to its governing lecture.
+
+\begin{table}[htbp]
+\centering
+\caption{Report roadmap: each chapter and the course lecture it applies to SHEO.}
+\label{tab:roadmap}
+\begin{tabularx}{\linewidth}{L{2.0cm} L{2.4cm} Y}
+\toprule
+\textbf{Chapter} & \textbf{Lecture} & \textbf{Topic} \\
+\midrule
+Chapter~2 & C02 / C03 & Software development process and Agile practice. \\
+Chapter~3 & C04 & Software project management. \\
+Chapter~4 & C06 & Requirements analysis and modelling. \\
+Chapter~5 & C07 & Software (architectural and detailed) design. \\
+Chapter~6 & C07 & User-interface and user-experience design. \\
+Chapter~7 & C08 & Software construction and code quality. \\
+Chapter~8 & C05 & Software configuration management. \\
+Chapter~9 & C09 & Quality assurance: verification, validation, and maintenance. \\
+Chapter~10 & --- & Conclusion and reflection. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Taken together, the chapters trace SHEO from the requirements that state \emph{what} it
+must do, through the design and construction that determine \emph{how} it does it, to the
+configuration management and quality assurance that keep it correct as it changes---the
+full arc the course defines as software engineering.

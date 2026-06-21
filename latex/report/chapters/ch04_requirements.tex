@@ -1,0 +1,452 @@
+\chapter{Requirements Engineering}
+
+This chapter establishes \emph{what} the AI-Driven Smart Home Energy Optimizer
+(SHEO) must do, deliberately kept separate from \emph{how} it is built. Following
+the discipline taught in Lecture C06 (Requirement Analysis), it first walks through
+the requirements engineering process, then reconstructs the client elicitation
+session from which the requirements were drawn, and finally records the catalogue of
+functional and non-functional requirements, the use-case model, the use-case
+specifications, and the behavioural and data models. The artefacts produced here form
+the agreed basis against which the system is later designed, constructed, and
+acceptance-tested.
+
+\section{The Requirements Engineering Process (C06)}
+\label{sec:req-process}
+
+Lecture C06 frames requirements engineering as a five-step pipeline whose output is a
+Software Requirements Specification (SRS). SHEO followed this pipeline faithfully:
+
+\begin{enumerate}
+  \item \textbf{Feasibility study.} Before committing, the team checked that the
+  product was technically, operationally, and economically achievable within a single
+  course timeline. The decisive constraint --- no physical Internet-of-Things (IoT)
+  hardware --- was resolved by deciding to substitute a deterministic mock device
+  simulator, which keeps the whole product demonstrable end-to-end while remaining
+  hardware-ready. The conclusion was that a small, fully working system was feasible
+  and preferable to a large half-built one.
+  \item \textbf{Requirements collection (elicitation).} Requirements were gathered
+  directly from the client in an offline discussion (Section~\ref{sec:elicitation}).
+  The principal elicitation techniques applied were the \emph{structured interview}
+  (asking the client to describe the devices, the desired controls, and the business
+  priority) and \emph{observation / scenario walk-through} (reasoning about how a
+  resident would inspect consumption, control a device, and act on a suggestion). The
+  course's own client-discussion practice --- in which each group posed sharp scoping
+  questions to the instructor acting as client --- supplied the model for this step.
+  \item \textbf{Analysis.} The raw notes were decoded, ambiguities were surfaced, and
+  conflicts and gaps were negotiated into testable statements. For example, the
+  client's loose phrase ``find habit and apply that rule'' was analysed into two
+  separable obligations: \emph{mine} a habit and \emph{recommend} a rule, with the
+  user retaining explicit control over whether it is ever applied.
+  \item \textbf{Modelling.} The analysed requirements were captured in the standard
+  C06 models: a use-case diagram and use-case specification tables for the functional
+  view (Sections~\ref{sec:usecase}--\ref{sec:uc-spec}), and an
+  entity-relationship diagram together with finite-state machines for the data and
+  behavioural views (Section~\ref{sec:models}).
+  \item \textbf{Definition (SRS).} Finally the requirements were written up as a
+  structured catalogue of functional requirements (\req{REQ-4.x}, \req{REQ-6.1}),
+  non-functional requirements (\req{NFR-*}), and business rules (\req{BR-1}--\req{BR-5}),
+  each given a unique identifier so that it can be traced forward into design, code,
+  and test. C06's quality criteria for an SRS --- that it be \emph{clear, accurate,
+  relevant,} and \emph{complete} --- guided this write-up, and the requirement
+  identifiers used throughout this chapter are exactly those carried into the
+  traceability matrix.
+\end{enumerate}
+
+A central rule from C01 and C06 underpins the entire chapter: requirements
+(``what'') are kept strictly separate from design (``how''). The statements below
+describe the system's externally observable obligations; the architecture and source
+modules that satisfy them are the subject of later chapters.
+
+\section{Client Elicitation Session}
+\label{sec:elicitation}
+
+The requirements originate in an offline discussion with the project's client, an
+IoT contractor. Reconstructed and decoded, the session ran as follows.
+
+\textbf{Who the client is.} Per the C01 stakeholder taxonomy, the client is the party
+that \emph{commissions and funds} the build. Here that is an IoT contractor who
+manufactures a range of AI capabilities and a range of IoT devices, and who hires the
+team to deliver an application on top of them. Crucially, the contractor is a
+\emph{business stakeholder, not a system actor}: it pays for and supplies the system
+but does not operate the running software day to day. The parties who do operate it ---
+the building management (the \emph{customer}) and the residents (the \emph{end-users})
+--- are distinguished from the client throughout, exactly as C01 requires.
+
+\textbf{What the client asked for.} The contractor ``has all kinds of IoT devices''
+and ``wants to provide an application.'' Each device type exposes its own controls:
+a fan can change speed and set a mode; an air-conditioner exposes a target temperature
+and an on/off switch. The client did not want the application to hard-code one screen
+per device. Instead it asked for an \emph{application programming interface that
+decides which feature each device exposes}, so that the appropriate controls for any
+given device are determined dynamically. Because no real hardware was available for
+the build, the client agreed that the team should ``create some kind of a mock
+device'' standing in for the physical ones.
+
+\textbf{Automation and recommendations.} The client described automation in terms of
+\emph{preconditions and postconditions} attached to a device's behaviour: a user
+\emph{may} set these conditions if they wish, but --- in the client's words ---
+``if they don't,'' the system should ``find a habit and apply that rule.'' Analysis
+turned this into the habit-recommendation requirement: when the user has not authored
+a rule, the system mines the resident's usage pattern and \emph{recommends} an
+automation rule, which the user can then read, accept, or dismiss.
+
+\textbf{The high-priority requirement.} The client stated one priority explicitly and
+emphatically: \emph{energy saving}. The contractor wants the customer ``to see the
+result of the actual electricity bill they saved when using the suggested rule.''
+This single sentence fixes the product's centre of gravity: every suggested rule must
+carry a concrete, monetary estimate of the saving it would achieve, expressed in
+Vietnamese đồng (VND), and shown \emph{before} the rule is accepted. The estimation
+must therefore be transparent and explainable rather than a black box --- a constraint
+that shapes the whole optimization design.
+
+\textbf{Relation to the course's client-Q\&A norm.} The course runs a recurring
+practice in which each group, having received a terse client brief, must return to the
+client with sharp questions that pin down scope, roles, and edge cases before
+designing anything --- for instance, questions on who may publish a public ticket, how
+delivery is handled, or whether an offline mode is required. SHEO's elicitation
+mirrors this norm. The team's clarifying questions resolved exactly the points the
+client's notes left open: \emph{scope} (mock devices instead of real hardware, an
+explainable rule engine instead of opaque machine learning), \emph{roles} (which party
+is client, customer, and end-user, and which of these becomes a login actor), and
+\emph{edge cases} (what happens when a device is offline, when a command is out of
+range, or when a safety-critical device would be powered off automatically). Those
+answers are precisely the obligations catalogued below.
+
+\section{Functional Requirements}
+\label{sec:fr}
+
+The functional requirements are organised into six families, each tracing back to a
+point raised in the elicitation session. Table~\ref{tab:fr} lists the most important
+sub-requirements; every one carries a stable identifier (\req{REQ-4.x.y},
+\req{REQ-6.1}) and a priority (H = high, M = medium) used in the traceability matrix.
+
+{\small
+\begin{xltabular}{\linewidth}{@{}l l Y c@{}}
+\caption{Functional requirements catalogue (the principal sub-requirements).}\label{tab:fr}\\
+\toprule
+\textbf{ID} & \textbf{Family} & \textbf{Requirement (the system shall\,\ldots)} & \textbf{Pri.}\\
+\midrule
+\endfirsthead
+\toprule
+\textbf{ID} & \textbf{Family} & \textbf{Requirement (the system shall\,\ldots)} & \textbf{Pri.}\\
+\midrule
+\endhead
+\multicolumn{4}{@{}l}{\textit{REQ-4.1 --- Real-time monitoring}}\\
+\req{REQ-4.1.1} & Monitoring & display instantaneous power per device, refreshed within 5\,s. & H\\
+\req{REQ-4.1.2} & Monitoring & report cumulative energy in kWh for today, the billing cycle, and a chosen range. & H\\
+\req{REQ-4.1.3} & Monitoring & retain one-minute telemetry aggregates for at least 12 months. & H\\
+\req{REQ-4.1.4} & Monitoring & mark a device unreachable after more than 60\,s of silence and exclude it from the live total. & H\\
+\req{REQ-4.1.5} & Monitoring & rank the top consumers by day, week, and month. & H\\
+\midrule
+\multicolumn{4}{@{}l}{\textit{REQ-4.2 --- Capability-driven control}}\\
+\req{REQ-4.2.1} & Control & expose, per device, a capability description that the front-end fetches \emph{before} rendering controls. & H\\
+\req{REQ-4.2.2} & Control & provide on/off and per-type controls for plug, bulb, fan, and air-conditioner. & H\\
+\req{REQ-4.2.3} & Control & validate each command against the device's capability range and reject anything out of range. & H\\
+\req{REQ-4.2.4} & Control & return a command outcome --- \textsc{success}, \textsc{rejected}, or \textsc{timeout} --- within 5\,s. & H\\
+\req{REQ-4.2.5} & Control & provide a mock simulator for plug, bulb, fan, air-conditioner, and sensor device types. & H\\
+\midrule
+\multicolumn{4}{@{}l}{\textit{REQ-4.3 --- Explainable rules \& auto-actions}}\\
+\req{REQ-4.3.1} & Rules & support conditions over time, day, tariff, device state, and sensor readings. & H\\
+\req{REQ-4.3.2} & Rules & require a rule's action to match the target device's capability. & H\\
+\req{REQ-4.3.3} & Rules & detect conflicts between enabled rules whose time windows overlap. & H\\
+\req{REQ-4.3.4} & Rules & let the user enable, disable, edit, and delete rules. & H\\
+\req{REQ-4.3.5} & Rules & log every rule execution in an immutable audit record. & H\\
+\req{REQ-4.3.6} & Rules & keep automatic action opt-in (off by default) and offer a 2-minute undo. & M\\
+\midrule
+\multicolumn{4}{@{}l}{\textit{REQ-4.4 --- Habit recommendations}}\\
+\req{REQ-4.4.1} & Recommend & generate recommendations only after at least 7 days of telemetry. & H\\
+\req{REQ-4.4.2} & Recommend & express each recommendation as a readable \texttt{WHEN--THEN} rule with a rationale and data window. & H\\
+\req{REQ-4.4.3} & Recommend & rank recommendations by VND saving and keep at most five active. & H\\
+\req{REQ-4.4.4} & Recommend & convert a recommendation into a real rule only on explicit acceptance. & H\\
+\req{REQ-4.4.5} & Recommend & suppress a dismissed recommendation for at least 30 days. & H\\
+\midrule
+\multicolumn{4}{@{}l}{\textit{REQ-4.5 --- VND bill-saving estimation (the client's high priority)}}\\
+\req{REQ-4.5.1} & Savings & compute a 14-day hourly baseline energy profile per device. & H\\
+\req{REQ-4.5.2} & Savings & estimate a saving as $\Sigma\,((\text{baseline}-\text{expected})\times\text{tariff})$. & H\\
+\req{REQ-4.5.3} & Savings & show the VND estimate \emph{before} the user saves a rule or accepts a recommendation. & H\\
+\req{REQ-4.5.4} & Savings & display the saving actually accrued so far in the current billing cycle (VND). & H\\
+\req{REQ-4.5.5} & Savings & flag a rule for recalculation when measured saving drifts beyond $\pm$20\% of the estimate. & M\\
+\midrule
+\multicolumn{4}{@{}l}{\textit{REQ-6.1 --- Reporting}}\\
+\req{REQ-6.1} & Reporting & export readings, rules, and savings as CSV. & M\\
+\bottomrule
+\end{xltabular}
+}
+
+Two features deserve emphasis because they encode the client's explicit wishes.
+First, \req{REQ-4.2.1} captures the requirement for an interface ``deciding which
+feature'' a device exposes: controls are rendered from a per-type capability
+description rather than hard-coded, so a new device type is supported without new
+control code. Second, \req{REQ-4.5.3} encodes the high-priority demand that the
+customer \emph{see} the saving of a suggested rule before committing to it --- the
+estimate must be visible at decision time, not merely after the fact.
+
+\section{Non-Functional Requirements and Business Rules}
+\label{sec:nfr}
+
+Following C06, non-functional requirements are classified as \emph{product},
+\emph{organisational}, or \emph{external} requirements. SHEO's product NFRs cover
+performance (\req{NFR-PER}), safety (\req{NFR-SAF}), and security (\req{NFR-SEC}); the
+external requirements are the deployment-level transport-security obligations; and the
+business rules (\req{BR-1}--\req{BR-5}) are organisational constraints that the
+business places on the system's behaviour. Tables~\ref{tab:nfr} and~\ref{tab:br}
+record them.
+
+\begin{table}[htbp]
+\centering
+\caption{Non-functional requirements, classified per C06 (product / external).}
+\label{tab:nfr}
+\small
+\begin{tabularx}{\linewidth}{@{}l l Y c@{}}
+\toprule
+\textbf{ID} & \textbf{Class} & \textbf{Requirement} & \textbf{Pri.}\\
+\midrule
+\req{NFR-PER-1} & Product (performance) & The dashboard shall refresh within 5\,s for up to 30 devices. & H\\
+\req{NFR-PER-2} & Product (performance) & A control command shall return user-visible feedback within 2\,s (95th percentile). & H\\
+\req{NFR-PER-3} & Product (performance) & The system shall sustain at least 100 concurrent simulated homes on one node. & H\\
+\req{NFR-SAF-1} & Product (safety) & At most one air-conditioner compressor command shall be issued per 3 minutes. & H\\
+\req{NFR-SAF-2} & Product (safety) & The system shall never automatically power off a safety-critical device. & H\\
+\req{NFR-SAF-3} & Product (safety) & Authoring shall warn on temperature, safety-critical, and unattended-off actions. & H\\
+\req{NFR-SEC-1} & External (deployment) & All traffic shall use TLS 1.2+ (HTTPS / WSS). & H\\
+\req{NFR-SEC-2} & Product (security) & The system shall enforce authentication and role-based access control. & H\\
+\req{NFR-SEC-3} & Product (security) & No password or token shall be stored in plaintext. & H\\
+\req{NFR-SEC-4} & Product (security) & Access to readings and logs shall be scoped to the user's own unit; the Administrator may view every unit in the building. & H\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{table}[htbp]
+\centering
+\caption{Business rules --- organisational constraints (\req{BR-1}--\req{BR-5}).}
+\label{tab:br}
+\small
+\begin{tabularx}{\linewidth}{@{}l Y c@{}}
+\toprule
+\textbf{ID} & \textbf{Business rule} & \textbf{Pri.}\\
+\midrule
+\req{BR-1} & Only the Administrator (building owner) may onboard residents by selling them a unit, which is provisioned with its default device package; a Resident cannot add or remove devices. & H\\
+\req{BR-2} & A recommendation remains advisory and has no effect until it is explicitly accepted. & H\\
+\req{BR-3} & Automatic action is disabled by default; the user must opt in per rule. & H\\
+\req{BR-4} & Deleting a rule shall preserve its execution history. & H\\
+\req{BR-5} & The tariff is manually configurable and defaults to VND. & M\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+The safety NFRs and \req{BR-2}/\req{BR-3} together express a deliberate caution
+principle that runs through the requirements: the system advises and estimates, but it
+acts on a unit's devices only when a human has explicitly authorised it, and
+never in a way that could compromise a safety-critical device.
+
+\section{Use-Case Model}
+\label{sec:usecase}
+
+The functional requirements above are organised into a use-case model that views the
+system as a single black box used by a small set of external actors. In keeping with
+the C06 convention, each actor is named with a \emph{singular role noun} (not an
+individual or a job title), and each use case is named \emph{verb + noun}.
+
+\fig{fig04-use-case.png}{Use-case model. The deployment models one apartment building. The Administrator (building owner) monitors a building overview across every unit, configures the building-wide tariff, and onboards residents by selling them a unit --- but never manually operates a unit's devices and authors no automation rules; the Resident operates only their own unit's devices and may author rules and accept recommendations for that unit; the Developer/Tester exercises mock devices on a maintenance unit; the System Scheduler autonomously fires rules and mines habits. The Client (IoT contractor) and Customer (building management) are business stakeholders outside the boundary --- the Customer operates the system \emph{as} the Administrator. Accepting a recommendation $\langle\langle$include$\rangle\rangle$ authoring a rule, which in turn $\langle\langle$include$\rangle\rangle$ command validation and a VND estimate.}{fig:usecase}
+
+The model has four actors:
+
+\begin{itemize}
+  \item \textbf{Administrator} --- the building owner, realised by the customer (building
+  management). Owns no unit and never operates individual devices: monitors a read-only
+  building overview across all units (resident roster, per-unit usage, building totals),
+  configures the building-wide tariff, and onboards residents by selling them a unit
+  (provisioned with its default device package).
+  \item \textbf{Resident} --- the primary end-user (a tenant of one unit). Views their own
+  unit's consumption and savings, controls every operable device in that unit, and may
+  author automation rules and accept or dismiss recommendations for it; no other unit is
+  visible to them.
+  \item \textbf{Developer/Tester} --- a maintenance role that may operate any device
+  for diagnostics, exercises the mock devices, and uses the offline-test hook to
+  prepare and reproduce demos.
+  \item \textbf{System Scheduler} --- a non-human (time) actor that autonomously fires
+  due rules and runs the periodic habit-mining and savings-accrual jobs.
+\end{itemize}
+
+The model uses the $\langle\langle$include$\rangle\rangle$ relationship for mandatory
+sub-behaviour: \emph{Review \& accept recommendation} includes \emph{Author automation
+rule} (an accepted recommendation becomes a rule), which itself includes the common
+command-validation and VND-estimation steps. As C01 requires, the Client and Customer
+are drawn \emph{outside} the system boundary as business stakeholders, since neither
+the funding contractor nor the adopting management is itself a login actor --- the
+customer interacts with the running system only in its Administrator role.
+
+\section{Use-Case Specifications (C06)}
+\label{sec:uc-spec}
+
+C06 requires that the principal use cases be detailed in specification tables giving
+preconditions, the main flow, alternate and error-handling flows, and postconditions.
+Three core use cases are specified below: controlling a device (UC-02), reviewing and
+accepting a recommendation (UC-05), and authoring an automation rule (UC-04).
+
+\begin{table}[htbp]
+\centering
+\caption{Use-case specification --- UC-02 Control device.}
+\label{tab:uc02}
+\small
+\begin{tabularx}{\linewidth}{@{}L{0.20\linewidth} Y@{}}
+\toprule
+\textbf{Field} & \textbf{Description}\\
+\midrule
+UC code & UC-02\\
+Name & Control device\\
+Primary actor & Resident\\
+Secondary actor & --- (the targeted device; the simulator stands in for hardware)\\
+Preconditions & The actor is authenticated; the device exists in the actor's own unit; the actor holds control permission for it.\\
+Main flow &
+  \begin{enumerate}
+    \item The actor opens the device's detail view.
+    \item The system fetches the device's capability description (\req{REQ-4.2.1}).
+    \item The system renders the controls generically from each control's kind (toggle / range / enumeration).
+    \item The actor issues a command (e.g.\ set fan speed, set air-conditioner target temperature).
+    \item The system validates the command against the capability range and the safety guard (\req{REQ-4.2.3}).
+    \item The system applies the state change and records telemetry.
+    \item The system returns the outcome \textsc{success} with the new state within 5\,s (\req{REQ-4.2.4}).
+  \end{enumerate}\\
+Alternate flow &
+  \textit{A1 --- Out-of-range or schema-mismatched command:} at step 5 validation
+  fails; the system makes no state change and returns \textsc{rejected} with a clear
+  message; flow ends. \textit{A2 --- Safety guard:} a safety-breaching command (e.g.\
+  exceeding the air-conditioner compressor rate limit) is returned as
+  \textsc{rejected} / \textsc{skipped} and nothing changes (\req{NFR-SAF-1}).\\
+Error-handling flow &
+  \textit{E1 --- Device offline:} if the device has been silent beyond the timeout,
+  the system returns \textsc{timeout}, changes nothing, and surfaces an offline
+  indication (\req{REQ-4.2.4}, \req{REQ-4.1.4}).\\
+Postcondition &
+  On \textsc{success} the device is in the commanded state and a reading is logged; on
+  \textsc{rejected}/\textsc{timeout} the device state is unchanged.\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{table}[htbp]
+\centering
+\caption{Use-case specification --- UC-05 Review \& accept recommendation.}
+\label{tab:uc05}
+\small
+\begin{tabularx}{\linewidth}{@{}L{0.20\linewidth} Y@{}}
+\toprule
+\textbf{Field} & \textbf{Description}\\
+\midrule
+UC code & UC-05\\
+Name & Review \& accept recommendation\\
+Primary actor & Resident\\
+Secondary actor & System Scheduler (mines the habits that produce recommendations)\\
+Preconditions & The actor is authenticated; at least one active recommendation exists, derived from $\ge$\,7 days of telemetry (\req{REQ-4.4.1}).\\
+Main flow &
+  \begin{enumerate}
+    \item The actor opens the Recommendations view.
+    \item The system lists active recommendations, ranked by VND saving, at most five (\req{REQ-4.4.3}).
+    \item For each, the system shows the readable \texttt{WHEN--THEN} rule, a rationale, the data window, and the monthly VND saving (\req{REQ-4.4.2}).
+    \item The actor selects \emph{Accept}.
+    \item The system converts the recommendation into a real automation rule ($\langle\langle$include$\rangle\rangle$ UC-04) and marks the recommendation accepted (\req{REQ-4.4.4}).
+  \end{enumerate}\\
+Alternate flow &
+  \textit{A1 --- Dismiss:} at step 4 the actor selects \emph{Dismiss}; the system
+  suppresses the same recommendation signature for at least 30 days and creates no
+  rule (\req{REQ-4.4.5}). \textit{A2 --- Cap exceeded:} when more than five
+  recommendations would be active, the lowest-saving surplus is expired to honour the
+  cap.\\
+Error-handling flow &
+  \textit{E1 --- Insufficient data:} if fewer than 7 days of telemetry exist for a
+  device, no recommendation is offered for it and the view explains why.\\
+Postcondition &
+  On accept, a new automation rule exists (auto-action off by default) and the
+  recommendation is accepted; on dismiss, the recommendation is suppressed and no rule
+  is created.\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{table}[htbp]
+\centering
+\caption{Use-case specification --- UC-04 Author automation rule.}
+\label{tab:uc04}
+\small
+\begin{tabularx}{\linewidth}{@{}L{0.20\linewidth} Y@{}}
+\toprule
+\textbf{Field} & \textbf{Description}\\
+\midrule
+UC code & UC-04\\
+Name & Author automation rule\\
+Primary actor & Resident\\
+Secondary actor & --- (the Optimization service supplies the VND estimate)\\
+Preconditions & The actor is authenticated and holds control permission for the target device.\\
+Main flow &
+  \begin{enumerate}
+    \item The actor opens the rule editor and chooses a target device.
+    \item The actor specifies the \textsc{when} condition (time, day, tariff, state, or sensor) and the \textsc{then} action, optionally with an \textsc{until} stop condition (\req{REQ-4.3.1}).
+    \item The system validates the action against the device capability (\req{REQ-4.3.2}) and checks for conflicts with overlapping enabled rules (\req{REQ-4.3.3}).
+    \item The system computes and displays the VND saving estimate \emph{before} the rule is saved (\req{REQ-4.5.3}).
+    \item The actor leaves auto-action off (default) or opts in, then saves.
+    \item The system persists the rule in the Enabled state.
+  \end{enumerate}\\
+Alternate flow &
+  \textit{A1 --- Conflict detected:} at step 3 the system reports the conflicting rule
+  and the time overlap; the rule is not silently saved until the actor resolves it.
+  \textit{A2 --- Opt-in to auto-action:} the actor enables automatic application; the
+  system records the opt-in and later fires the rule subject to the safety guard.\\
+Error-handling flow &
+  \textit{E1 --- Action exceeds capability:} a \textsc{then} action outside the
+  device's capability is rejected at validation with a clear message; the rule is not
+  saved.\\
+Postcondition &
+  A valid rule is stored (Enabled), carrying its VND estimate; on validation failure no
+  rule is created.\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Behavioural and Data Models}
+\label{sec:models}
+
+The modelling step of the requirements process also produces a data model and a set
+of behavioural models, which together fix the structure of the system's state and the
+lifecycles of its key objects. These are requirements-level models; their realisation
+in the database schema and the running services is treated in later chapters.
+
+\subsection{Data model}
+
+Figure~\ref{fig:erd} gives the entity-relationship model. The deployment is one apartment
+building; each \emph{home} is a \emph{unit} occupied by one Resident, and almost every
+entity is scoped to a unit, which is the basis of the unit-scoped access control demanded
+by \req{NFR-SEC-4}: a resident can never read another unit's readings or logs, while the
+Administrator (building owner, with no unit of their own) may view every unit. A tariff
+with no unit is the building-wide tariff. The model reifies the many-to-many control grant
+between users and devices as a device-permission entity (the basis of \req{BR-1}), and it
+deliberately keeps a rule's execution log independent of the rule so that deleting a rule
+preserves its history, as \req{BR-4} requires.
+
+\fig{fig08-erd.png}{Entity-relationship diagram. The deployment models one building; each Home is a unit, and almost every entity is scoped to a unit (the basis of unit-scoped access control, \req{NFR-SEC-4}). The Administrator has no unit (nullable \texttt{home\_id}) and oversees all units; a tariff with no unit is building-wide. The device-permission entity reifies the user--device control grant, and the rule-to-execution link carries no cascade so the execution log survives rule deletion (\req{BR-4}).}{fig:erd}
+
+\subsection{Behavioural models}
+
+Three finite-state machines specify the lifecycles of the system's most important
+objects, modelling the requirements as observable state transitions.
+
+\fig{fig12-state-rule.png}{State machine --- rule lifecycle. A rule is authored as a Draft, becomes Enabled or Disabled, transits a transient Fired state (auto-applied firings may be Undone within the 2-minute window), enters NeedsRecalc on $\pm$20\% drift, and on deletion is terminal yet preserves its execution history (\req{REQ-4.3}, \req{BR-4}).}{fig:state-rule}
+
+The rule lifecycle (Figure~\ref{fig:state-rule}) captures \req{REQ-4.3.4} and
+\req{REQ-4.3.6}: a rule moves between Enabled and Disabled, is fired by the scheduler,
+and an auto-applied firing can be undone within two minutes.
+
+\fig{fig13-state-recommendation.png}{State machine --- recommendation lifecycle. A mined recommendation becomes Active, then is Accepted (becoming a rule), Dismissed (suppressed for 30 days), or Expired when it falls outside the top-five cap (\req{REQ-4.4}).}{fig:state-rec}
+
+The recommendation lifecycle (Figure~\ref{fig:state-rec}) models \req{REQ-4.4.3}--%
+\req{REQ-4.4.5}: a recommendation is advisory while Active and leaves that state only
+on an explicit user decision, becoming a rule on acceptance or suppressed for 30 days
+on dismissal.
+
+\fig{fig14-state-connectivity.png}{State machine --- device connectivity. A device flips to Offline after more than 60\,s of silence (or a forced offline) and back to Online when telemetry resumes; while offline it is excluded from the live home total (\req{REQ-4.1.4}).}{fig:state-conn}
+
+The connectivity lifecycle (Figure~\ref{fig:state-conn}) realises \req{REQ-4.1.4}: a
+silent device becomes Offline and is excluded from the live total until telemetry
+resumes. A complementary activity-style model of the end-to-end user journey ---
+signing in, then choosing to control a device, review a recommendation, or author a
+rule --- is presented with the user-interface design in the later chapter, since it is
+most naturally read alongside the screens it traverses.

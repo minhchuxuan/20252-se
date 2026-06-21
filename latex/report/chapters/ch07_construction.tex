@@ -1,0 +1,316 @@
+\chapter{Software Construction}
+\label{chap:construction}
+
+Software construction, as defined in Lecture~C08, is the activity of converting a
+detailed design into working, maintainable code. It encompasses not only typing
+instructions into an editor but also the discipline that surrounds that act: a
+consistent coding style, a modular decomposition that hides complexity behind stable
+interfaces, a principled programme of refactoring to remove code smells as they
+accumulate, and a formal inspection that exposes defects before they reach users. This
+chapter traces each of those concerns through the SHEO implementation, grounding every
+point in the structure of the system as it was actually built.
+
+\section{Construction in the development lifecycle}
+\label{sec:construction-lifecycle}
+
+In the SHEO development process, construction follows the detailed design established
+in Chapter~\ref{chap:design}: class responsibilities, sequence flows, and persistence
+schemas had been decided before implementation began. Construction therefore had a
+clear contract to satisfy, and every significant decision---which library, which
+language feature, how to structure an error return---could be evaluated against the
+design goals of high cohesion, low coupling, and information hiding that are
+documented in the System Design Document.
+
+The technology stack was chosen to support those goals directly.
+
+\begin{table}[htbp]
+\centering
+\caption{SHEO technology stack and the construction rationale for each choice.}
+\label{tab:stack}
+\begin{tabularx}{\textwidth}{L{0.22\textwidth} L{0.18\textwidth} Y}
+\toprule
+\textbf{Component} & \textbf{Technology} & \textbf{Construction rationale} \\
+\midrule
+Language & A modern, statically hinted dynamic language &
+  Its rich type-hint system, value-object facilities, and a mature standard library
+  reduce the volume of boilerplate that obscures intent. \\
+Web framework & A declarative Python web framework &
+  Routes, dependency injection, and request and response schemas are declared
+  together, making the interface layer self-documenting without a separate tool. \\
+Persistence & A mature object-relational mapper &
+  The repository pattern is natural to it; queries are isolated from
+  service logic, realising the information-hiding goal at the persistence boundary. \\
+Data validation & A type-driven validation library &
+  Schema validation is declared as ordinary types; invalid inputs are rejected at the
+  boundary with a machine-readable error before any business logic executes. \\
+Relational store & A file-backed embedded database &
+  Eliminating an external database server removes an infrastructure dependency during
+  development and testing, keeping the test suite fast and reproducible. \\
+\midrule
+User-interface framework & A component-based front-end framework &
+  Component-based decomposition mirrors the backend service decomposition, giving
+  each screen a single owner and a single reason to change. \\
+Charting & A declarative charting library &
+  Declarative, data-driven charts align with the capability-schema philosophy: the
+  dashboard renders from data descriptors rather than hard-coded widget trees. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Coding style and conventions}
+\label{sec:coding-style}
+
+Lecture~C08 identifies six coding-style principles: \emph{consistency},
+\emph{clarity}, \emph{single-purpose methods}, \emph{fewer than six parameters},
+\emph{naming} (verbs for functions, nouns for classes and variables), and
+\emph{comments that describe what, not how}. SHEO adheres to each, enforced by
+convention rather than a separate lint pass.
+
+\subsection{Naming and intent}
+
+Every operation in the backend is named by a verb phrase that announces its effect:
+the capability-validation routine, the command-application entry point, the
+unit-scoped lookup that raises a not-found error when nothing matches, the
+capability-retrieval accessor, and the adapter-selection function all read as actions.
+Every abstraction is named by a noun that describes the responsibility it represents:
+the device-control service, the capability schema, the device-adapter interface, and
+the structured validation result. This consistency means that a reader surveying the
+list of components in a module can determine the responsibility of each one before
+examining its definition.
+
+\subsection{File-level docstrings}
+
+Every backend module opens with a brief descriptive header that states the module's
+purpose and its relationship to the requirements. The header of the device-control
+service module, for example, records that the module implements the capability-driven
+control path of \req{REQ-4.2.3} and the safety guards of \req{NFR-SAF}, and that both
+manual user commands and rule-initiated commands flow through the single
+command-application entry point so that validation and safety rules are enforced
+uniformly. Such a header names the requirement identifiers that the module satisfies
+and states the architectural invariant---the single choke point for all commands---that
+reviewers should verify, in accordance with the ``describe what, not how'' rule.
+
+\subsection{Type hints and small, focused functions}
+
+Type annotations are declared on every public operation. Return types,
+parameter types, and the element types of collections are all stated, converting the
+type system into a machine-checked expression of each operation's contract. The
+capability-validation routine is representative of the single-purpose, narrow-parameter
+style the course advocates.
+
+\label{lst:validate}%
+The routine accepts a device type, the name of a control, and a proposed value, and
+returns a structured validation result that reports either success---with the value
+normalised to its canonical form---or failure together with a human-readable
+explanation. It first resolves the capability schema for the device type, then locates
+the named control within that schema, and finally checks the proposed value against the
+control's kind: a numeric range control is bounds-checked, while toggle and enumeration
+controls are matched against their permitted sets. The routine takes exactly three
+parameters, well below the six-parameter threshold; it returns a structured result so
+that the error message is machine-readable rather than raised as a bare exception; and
+it has no side effects, leaving persistence and dispatch to its callers. Its descriptive
+header cites \req{REQ-4.2.3} rather than restating the algorithm that the code already
+expresses.
+
+\section{Information hiding and modularity in code}
+\label{sec:info-hiding}
+
+Information hiding is applied at three distinct boundaries in the SHEO codebase, each
+chosen to isolate a design decision that is likely to change.
+
+\subsection{Repositories hide persistence}
+
+The persistence layer is organised into repositories---one for devices and one for the
+per-device permission records---that encapsulate all query construction. Service code
+never assembles a query predicate directly; it invokes named operations such as a
+unit-scoped query that returns every device belonging to a given unit, or a membership
+check that confirms a particular device belongs to a particular unit, and receives
+domain objects in return. If the storage engine were replaced, only the repository
+implementations would need to change.
+
+\subsection{The capability schema hides device-type variance}
+
+The capability schema expresses everything the rest of the system needs to know about a
+device type as \emph{data} rather than as \emph{code branches}. Neither the interface
+layer nor the user interface ever tests for a specific device type with a conditional
+branch; both query the schema and act on what they find. Adding a new device type
+therefore requires changes in exactly two places---the capability registry and the
+corresponding adapter---and nowhere else.
+
+\subsection{Adapters hide per-type behaviour}
+
+The Strategy pattern is realised through an abstract device-adapter interface defined
+in the adapter base module. The interface is deliberately minimal: one abstract
+operation for advancing the simulation by one time step, and one default operation for
+applying a validated control change to a device's state. Callers obtain the correct
+strategy through the adapter-selection function, whose body is a single lookup in a
+registry that maps each device type to its corresponding per-type adapter; the concrete
+adapter classes are never referenced directly by callers.
+
+\label{lst:adapter}%
+The consequence of this design is that the entire call site in the service layer
+reduces to two steps---obtain the adapter for the device's type, then ask it to apply
+the validated control change---regardless of how complex the underlying simulation logic
+becomes. The air-conditioner adapter, for instance, models hysteresis, compressor
+cycling, and ambient-temperature drift in roughly thirty lines that remain entirely
+invisible to the service.
+
+\section{Refactoring and code smells}
+\label{sec:refactoring}
+
+Refactoring, as defined in C08, is the transformation of the internal structure of
+code without changing its observable behaviour. Its purpose is to remove \emph{code
+smells}---structural problems that make software harder to understand, test, or
+extend---prior to the addition of new capability. The canonical smells named in the
+course include duplicated code, long method, large class, too many parameters,
+divergent change, lazy class, speculative generality, and temporary field.
+
+Two concrete refactoring decisions made during SHEO construction directly address
+smells from that list.
+
+\subsection{Centralising the safety check}
+
+An early version of the control path performed safety checks in multiple places: once
+in the interface handler that received a user command, and again in the rule engine
+that executed automated actions. This is the \emph{duplicated code} smell:
+the same guard appeared in two locations, so a correction to the guard had to be
+applied twice and could silently diverge. The refactoring moved all safety logic into
+a single private safety-check step within the device-control service, and introduced a
+single public command-application entry point through which every command---manual and
+automated alike---must pass.
+
+\label{lst:apply}%
+Within that entry point the command-application logic is strictly linear. It first
+rejects commands addressed to a device that is offline or has been forced offline; it
+then delegates to the capability-validation routine and abandons the command if the
+proposed value is invalid, retaining the normalised value otherwise; it next runs the
+safety-check step and returns immediately if a safety constraint is violated; and only
+then does it obtain the per-type adapter and ask it to apply the validated change. The
+sequence---validate, safety-check, dispatch---is explicit and self-contained. A reader
+can verify the entire guard chain by following one operation, without tracing branches
+across several modules.
+
+\subsection{Removing duplicated validation}
+
+Before the capability schema was introduced, each interface operation that accepted a
+device command contained its own range check and enumeration check. These checks were
+written independently, carried slightly different error messages, and diverged over time
+as device types were added. This is simultaneously the \emph{duplicated code} smell and
+a mild case of the \emph{divergent change} smell: a new device type required edits
+across several interface operations. The refactoring introduced the capability-validation
+routine as the single authority on what constitutes a valid command for each device
+type, and removed all per-operation checks. Every operation now delegates to that
+routine by way of the command-application entry point; the capability schema is the
+single source of truth.
+
+Both refactorings satisfy the C08 criterion: no behaviour changed---the automated test
+suite continued to pass at every intermediate step---but the internal structure became
+easier to reason about and to extend.
+
+\section{Code review}
+\label{sec:code-review}
+
+Lecture~C08 distinguishes two review processes. A \textbf{walkthrough} is author-led
+and informal: the author guides peers through the code, gathering suggestions. A
+\textbf{formal inspection} is conducted by non-authors against a pre-defined
+checklist; the author is present but does not lead. The course identifies three review
+criteria: \emph{maintainability} (can the code be changed safely?),
+\emph{reusability} (can components be used in other contexts?), and
+\emph{extensibility} (can the system accommodate new requirements without pervasive
+edits?).
+
+\subsection{The adversarial inspection process}
+
+SHEO underwent a structured review that functioned as a formal inspection. A
+non-author reviewing agent examined the codebase against a checklist derived from the
+requirements, the non-functional requirements, and security best practice. The review
+was adversarial in the sense that the inspector was explicitly tasked with finding
+defects, not confirming correctness---matching the spirit of the formal inspection
+model in which the non-author role is designed to surface problems that the author has
+normalised. The checklist covered five categories:
+
+\begin{enumerate}
+  \item \textbf{Authorisation.} Every interface operation must enforce unit-scoped
+        access control; cross-unit access must be impossible.
+  \item \textbf{Input validation.} Every external input must be rejected at the
+        boundary before entering business logic; no operation may bypass the
+        validation schema.
+  \item \textbf{Safety constraint enforcement.} The \req{NFR-SAF} rules must be
+        applied on every command path---interactive and automated---not only when a
+        human issues a command.
+  \item \textbf{Telemetry isolation.} One unit must not be able to read another
+        unit's sensor data, even if device identifiers are predictable integers.
+  \item \textbf{Rule mutation.} A rule update must pass through the same
+        authorisation and validation as rule creation.
+\end{enumerate}
+
+\subsection{Defects found and corrected}
+
+The inspection identified two defects, both verified by a failing test before the fix
+and a passing test after.
+
+\paragraph{Cross-unit insecure direct object reference in the telemetry series
+operation.}
+The telemetry-series retrieval operation accepted a device identifier without verifying
+that the device belonged to the requesting user's unit. An authenticated resident from
+unit~A could therefore obtain the full telemetry history of any device in unit~B by
+supplying its identifier. This is an insecure direct object reference (IDOR)
+vulnerability---a failure of the authorisation criterion. The fix introduced a
+unit-scoped lookup at the start of the operation, matching the pattern already
+established by the device-control service's unit-scoped lookup. A regression test was
+added asserting that a not-found response is returned when a device belonging to a
+different unit is requested.
+
+\paragraph{Unvalidated rule update.}
+The rule-update operation accepted an arbitrary request payload and wrote it to the
+database without passing it through the same input-validation schema that the
+rule-creation operation enforced. A malformed or adversarially crafted update could
+therefore insert a rule with missing required fields, causing the rule engine to raise
+an unhandled exception at execution time. The fix applied the existing rule-update
+schema to the operation, restoring the input-boundary guarantee established at creation
+time.
+
+\subsection{Review criteria mapped to SHEO mechanisms}
+
+Table~\ref{tab:review-criteria} maps each C08 review criterion to the mechanism
+that satisfies it after the inspection.
+
+\begin{table}[htbp]
+\centering
+\caption{C08 code review criteria and the corresponding SHEO mechanisms
+post-inspection.}
+\label{tab:review-criteria}
+\begin{tabularx}{\textwidth}{L{0.22\textwidth} Y Y}
+\toprule
+\textbf{Review criterion} & \textbf{What it requires} & \textbf{SHEO mechanism} \\
+\midrule
+Maintainability &
+  Internal structure can be changed without inadvertent side effects. &
+  A single command-application choke point; the repository abstraction; one
+  capability schema per device type; no duplicated guards. \\
+Reusability &
+  Components can be used in different contexts without modification. &
+  The capability-validation routine is invoked by the interface layer, the rule
+  engine, and the automated test suite without any context dependency; the per-type
+  adapters are stateless and context-free. \\
+Extensibility &
+  New requirements can be accommodated with localised changes. &
+  A new device type requires exactly one new capability-schema entry and one new
+  per-type adapter; no existing code is modified (Open/Closed Principle). \\
+Security &
+  Access control is enforced at every boundary. &
+  A unit-scoped lookup on every device and telemetry operation; input-validation
+  on every write path; an administrator-authorisation guard on all mutation
+  operations. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+The two defects found by the inspection were both failures of the
+\emph{maintainability} and \emph{security} criteria: the cross-unit IDOR arose
+because a defensive pattern established in one service had not been propagated to a
+newer interface operation, and the unvalidated rule update arose because a boundary
+guarantee had been applied inconsistently. Both are the kind of defect that is invisible to the
+original author---who knows the intent---and visible to a non-author reviewer who
+tests the code against the stated contract. This is precisely the rationale that C08
+gives for requiring formal inspections rather than relying on walkthroughs alone.

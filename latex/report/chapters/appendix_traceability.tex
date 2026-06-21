@@ -1,0 +1,92 @@
+\chapter{Requirements Traceability Matrix}
+\label{app:rtm}
+
+This appendix gives the consolidated requirements traceability matrix (RTM) for SHEO,
+linking each requirement to the design element that realises it and the automated test
+that verifies it. It supports both forward (requirement~$\rightarrow$~component~$\rightarrow$~test)
+and backward (test~$\rightarrow$~requirement) traceability. Policy thresholds (refresh
+interval, 60\,s offline, 14-day baseline, 7-day minimum history, five active
+recommendations, 30-day dismissal, two-minute undo, AC compressor interval, $\pm$20\%
+drift) are centralised in the system configuration module. The full suite is \textbf{61 automated tests,
+all passing}.
+
+\section{Functional requirements}
+
+\begin{longtable}{@{}L{1.7cm} L{4.3cm} L{4.4cm} L{3.4cm}@{}}
+\toprule
+\textbf{Req.} & \textbf{Requirement (short)} & \textbf{Realising component} & \textbf{Verified behaviour} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Req.} & \textbf{Requirement (short)} & \textbf{Realising component} & \textbf{Verified behaviour} \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+REQ-4.1.1 & Instantaneous power per device, live refresh & The device-simulation engine, the telemetry/dashboard service, and the WebSocket push layer & Confirms that the dashboard endpoint returns live power metrics for all home devices \\
+REQ-4.1.2 & Cumulative kWh: today / cycle / range & The consumption-series method of the telemetry service, backed by the energy-aggregation query in the repository layer & Verifies that energy consumption is correctly bucketed by day, billing cycle, and arbitrary date range \\
+REQ-4.1.4 & Device silent $>$ 60\,s $\Rightarrow$ offline & The online-status refresh routine of the telemetry service & Verifies that a command sent to a device silent for more than 60 seconds times out and that the device is marked offline \\
+REQ-4.1.5 & Top consumers ranking & The top-consumers query of the telemetry service & Verifies that devices are returned in descending order of energy consumption \\
+REQ-4.2.1 & Fetch capabilities before rendering & The capability-retrieval routine and the device-control API endpoint & Verifies that the capability endpoint drives control rendering for each device type \\
+REQ-4.2.2 & On/off control for plug/bulb/fan/AC & The capability-validation routine together with the per-type device-adapter implementations & Verifies that power on and off commands are accepted and applied for all supported device classes \\
+REQ-4.2.3 & Validate command vs capability range & The capability-validation routine & Boundary test of the air-conditioner target range (accepts 16 and 30, rejects 15 and 31); verifies that out-of-range commands are rejected \\
+REQ-4.2.4 & Outcome success / rejected / timeout & The command-application step of the device-control service & Verifies that the service correctly reports success, rejection, and timeout outcomes for issued commands \\
+REQ-4.2.5 & Mock simulator (plug/bulb/fan/AC/sensor) & The device-simulation engine and the mock-device management method of the device-control service & Verifies that all mock device profiles are available and that mock devices can be added and subsequently deleted \\
+REQ-4.3.2 & Action must match device capability & The rule-validation routine of the rule engine & Verifies that a rule action referencing an unsupported device capability is rejected \\
+REQ-4.3.3 & Detect conflicting enabled rules & The conflict-detection routine of the rule engine & Verifies that enabling two mutually contradictory rules is detected and reported as a conflict \\
+REQ-4.3.4 & Enable/disable/edit/delete rules & The rule-update and rule-deletion operations of the rule engine & Verifies that a rule can be toggled, modified, and removed through the lifecycle management interface \\
+REQ-4.3.5 & Log every execution & The rule-execution record model and the rule-execution step of the rule engine & Verifies that each triggered rule produces a persistent execution log entry, that an undo is recorded, and that the history is preserved after subsequent edits \\
+REQ-4.3.6 & Auto-action opt-in + 2-min undo & The auto-apply field of the rule model and the undo operation of the rule engine & Verifies that auto-action is disabled by default and that the undo window is correctly enforced \\
+REQ-4.4.1 & Recommend only after $\ge$ 7 days & The sufficient-history guard of the recommendation service & Verifies that no recommendation is generated for a device whose usage history is shorter than seven days \\
+REQ-4.4.3 & Rank by VND, $\le$ 5 active & The active-recommendation cap enforcer of the recommendation service & Verifies that recommendations are ranked by projected monetary saving and that the active count is capped at five \\
+REQ-4.4.4 & Explicit accept $\Rightarrow$ becomes a rule & The acceptance handler of the recommendation service & Verifies that accepting a recommendation creates a corresponding automation rule \\
+REQ-4.4.5 & Dismissed $\Rightarrow$ suppressed 30 days & The dismissal handler of the recommendation service & Verifies that a dismissed recommendation does not reappear within the 30-day suppression window \\
+REQ-4.5.1 & 14-day baseline profile per device & The hourly-baseline computation of the optimisation service & Verifies that the saving estimate uses the 14-day baseline formula before a rule is saved \\
+REQ-4.5.2 & Saving $= \Sigma$((baseline$-$expected)$\times$tariff) & The saving-estimation method of the optimisation service, together with the tariff service & Verifies that the computed saving matches the expected value when the baseline-minus-forecast formula is applied with the configured tariff \\
+REQ-4.5.3 & Show estimate before save / accept & The saving-estimate endpoint of the savings API & Verifies that a monetary saving estimate is returned before the rule or recommendation is committed \\
+REQ-4.5.4 & Dashboard cycle savings (VND) & The accrual routine of the optimisation service & Verifies that the savings summary correctly aggregates realised savings over the current billing cycle \\
+REQ-4.5.5 & $\pm$20\% drift $\Rightarrow$ needs recalculation & The drift-detection routine of the optimisation service & Verifies that the drift-check path is reachable and triggers a recalculation flag when consumption deviates by more than 20\% from the baseline \\
+REQ-6.1 & Export readings/rules/savings as CSV & The CSV-export methods of the report service & Verifies that energy readings, automation rules, and saving summaries can each be exported as a well-formed CSV file \\
+\end{longtable}
+
+\section{Non-functional requirements and business rules}
+
+\begin{longtable}{@{}L{1.7cm} L{4.3cm} L{4.4cm} L{3.4cm}@{}}
+\toprule
+\textbf{ID} & \textbf{Requirement (short)} & \textbf{Realising component} & \textbf{Verified behaviour} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{ID} & \textbf{Requirement (short)} & \textbf{Realising component} & \textbf{Verified behaviour} \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+NFR-SAF-1 & $\le$ 1 AC compressor command / 3 min & The safety-check routine of the device-control service & Verifies that a second air-conditioner compressor command issued within three minutes is blocked \\
+NFR-SAF-2 & No auto power-off of safety-critical device & The safety-check routine of the device-control service & Verifies that an automated power-off command targeting a safety-critical device is refused \\
+NFR-SAF-3 & Warn on temperature / unattended off & The rule-validation routine of the rule engine & Verifies that validation emits warnings when a rule would set a hazardous temperature or leave a device unattended in the off state \\
+NFR-SEC-2 & Authentication + RBAC & The authentication module, the administrator-authorisation guard and the building-overview service & Verifies that login succeeds with valid credentials and fails with invalid ones; that a resident-role user is prevented from adding a device and from reaching the Administrator's building overview; that the view-only Administrator (building owner) is forbidden from issuing a device-control command; and that a Resident may control only the operable devices of their own unit \\
+NFR-SEC-3 & No plaintext passwords & The salted password-hashing routine of the security module & Verifies that the stored credential is a salted hash and that the original plaintext is never stored or returned \\
+NFR-SEC-4 & Unit-scoped access to data & The unit-scoping filter of the device repository and the telemetry service & Rejection of a cross-unit device identifier: verifies that a Resident cannot retrieve consumption data for a device belonging to a different unit, while the Administrator may view every unit \\
+BR-1 & Only the Administrator sells units / onboards residents & The administrator-authorisation guard and the resident-onboarding endpoint of the authentication API & Verifies that a resident-role user cannot add a device, and that the Administrator can sell a unit --- provisioned with its default device package --- to a new Resident who then controls that unit but cannot reach another \\
+BR-2 & Recommendations advisory until accepted & The acceptance handler of the recommendation service & Verifies that a recommendation has no effect on automation until it is explicitly accepted by the user \\
+BR-3 & Auto-action disabled by default & The auto-apply field of the rule model & Verifies that a newly created rule has automated execution disabled by default \\
+BR-4 & Deleting a rule keeps execution history & The rule-execution record model, which retains history without cascading deletes & Verifies that execution log entries remain accessible after the parent rule is deleted \\
+BR-5 & Tariff manually configurable; VND default & The tariff service and the settings API endpoint & Verifies that the tiered tariff structure is applied progressively, and that a resident-role user cannot modify tariff settings \\
+\end{longtable}
+
+\section{Design-pattern traceability}
+
+\begin{center}
+\begin{tabularx}{\linewidth}{@{}L{2.6cm} Y L{4.0cm}@{}}
+\toprule
+\textbf{Pattern} & \textbf{Realisation in SHEO} & \textbf{Evidence} \\
+\midrule
+Strategy & Per-device-type behaviour and power model encapsulated in interchangeable adapters & The device-adapter interface and its per-type implementations \\
+Observer & Decoupled event fan-out (telemetry, notifications) & The event bus (Observer pattern) \\
+Repository & Persistence hidden behind cohesive accessors & The repository layer \\
+Dependency Injection & Request-scoped database session, user identity, and role guards & The dependency-injection provider for API handlers \\
+State & Device and rule lifecycles & The domain model and rule engine \\
+\bottomrule
+\end{tabularx}
+\end{center}

@@ -1,0 +1,255 @@
+\chapter{Conclusion and Future Work}
+
+\section{Summary}
+
+This report has documented the full software-engineering lifecycle of the
+\textbf{Smart Home Energy Optimizer (SHEO)}, an AI-assisted monitoring and
+control platform designed to help residential occupants reduce electricity
+consumption and visualise the financial impact of their energy-saving decisions
+in Vietnamese Dong (VND).
+
+SHEO is delivered as a three-tier web application: a FastAPI back-end organised
+into layered services and a capability-driven device abstraction, a React
+single-page front-end, and a mock device simulator that enables end-to-end
+demonstration without physical hardware.  The platform's principal capabilities
+are:
+
+\begin{itemize}[noitemsep]
+  \item \textbf{Capability-driven monitoring and control.} Every device exposes a
+        capability schema that drives both the API and the front-end widget
+        automatically, so adding a new device type requires no UI code changes.
+  \item \textbf{Explainable WHEN--THEN automation rules.} Residents author rules
+        for their own unit in structured natural language; the rule
+        engine interprets and audits them rather than executing opaque scripts.
+  \item \textbf{Habit recommendations.} A recommendation engine identifies
+        high-consumption patterns and proposes WHEN--THEN rules; residents review
+        and accept each suggestion individually.
+  \item \textbf{VND bill-saving estimation.} Before accepting a recommendation,
+        the user sees an estimated monthly saving in VND.  Accepted rules
+        accumulate in a cycle-savings dashboard, closing the feedback loop between
+        behaviour change and financial outcome.
+\end{itemize}
+
+The system is fully implemented and verified: \textbf{61 automated tests} (unit,
+integration, system, and acceptance levels) pass against the current codebase,
+and all functional requirement families listed in the SRS are represented in the
+test suite's traceability matrix.
+
+\section{Requirements Satisfaction}
+
+The client's single highest-priority acceptance criterion was:
+
+\begin{quote}
+\textit{The Customer can see the actual VND amount saved by a suggested
+automation rule before deciding whether to accept it.}
+\end{quote}
+
+This criterion is satisfied through two complementary mechanisms.  First, the
+\emph{estimate-before-accept} flow computes a prospective monthly saving (in
+VND) at the point of recommendation review; the user sees the figure before
+committing.  Second, the \emph{cycle-savings dashboard} aggregates realised
+savings for each accepted rule over the current billing cycle, providing
+post-hoc validation that the estimate was meaningful.
+
+Table~\ref{tab:req-satisfaction} maps each functional requirement family to its
+implementation.  Collectively, these families are exercised by the suite of
+61 automated tests, whose per-requirement traceability is detailed in the
+appendix.
+
+\begin{table}[htbp]
+  \centering
+  \caption{Functional requirement families and their satisfaction status}
+  \label{tab:req-satisfaction}
+  \begin{tabularx}{\textwidth}{@{} l X X @{}}
+    \toprule
+    \textbf{Req.\ family} & \textbf{Description} & \textbf{Key component} \\
+    \midrule
+    REQ-4.1 & Real-time device monitoring & The device-listing and monitoring service with its capability widget \\
+    REQ-4.2 & Remote device control & The device-control operation \\
+    REQ-4.3 & WHEN--THEN automation rules & The rule engine \\
+    REQ-4.4 & Habit recommendations & The recommendation service and its savings estimate \\
+    REQ-4.5 & VND bill-saving dashboard & Cycle-savings aggregation in the bill-saving (optimisation) service \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+Non-functional requirements were addressed as follows: response-time
+constraints (NFR-PER) are enforced by asynchronous request handlers in the
+application server and in-memory caching; safety constraints (NFR-SAF) prevent
+the system from automatically powering off safety-critical devices; security
+constraints (NFR-SEC) are upheld by role-based access guards (the
+administrator-authorisation guards) and the IDOR vulnerability discovered during
+the adversarial review was patched and regression-tested.
+
+\section{Course-Concept Coverage}
+
+Table~\ref{tab:course-coverage} provides a candid assessment of how each
+lecture topic in IT3180E is reflected in the SHEO project artifacts.
+
+{\small
+\begin{xltabular}{\textwidth}{@{} l l X l @{}}
+  \caption{IT3180E lecture-topic coverage by SHEO project}\label{tab:course-coverage}\\
+    \toprule
+    \textbf{Lecture} & \textbf{Topic} & \textbf{Where addressed in this report} & \textbf{Coverage} \\
+    \midrule
+    \endfirsthead
+    \toprule
+    \textbf{Lecture} & \textbf{Topic} & \textbf{Where addressed in this report} & \textbf{Coverage} \\
+    \midrule
+    \endhead
+    C01 & SE overview; stakeholder roles
+        & Chapter~1: Client / Customer / Resident model, a general framing of the software-engineering lifecycle, quality focus, Function--Cost--Time triangle
+        & Strong \\[4pt]
+    C02 & Software development process
+        & Chapter~2: incremental model with agile-style iterations; ISO/IEC~9126 quality attributes mapped to NFRs
+        & Partial \\[4pt]
+    C03 & Agile / Scrum
+        & Chapter~2: working-software discipline maintained throughout; no formal Scrum roles or sprint artifacts documented
+        & Light \\[4pt]
+    C04 & Software project management
+        & Chapter~3: Work Breakdown Structure, effort-estimation table, CPM task network with critical path, Gantt schedule, and a risk register scored by Probability~$\times$~Impact with Avoid/Transfer/Mitigate/Accept responses
+        & Strong \\[4pt]
+    C05 & Software configuration management
+        & Chapter~8: dedicated CM plan identifying CIs, baselines, and Git workflow
+        & Partial \\[4pt]
+    C06 & Requirements analysis and UML
+        & Chapter~4: SRS, FR/NFR taxonomy, Use-Case Diagram, ERD, state-machine diagrams, activity-style user flow
+        & Strong \\[4pt]
+    C07 & Software design and UI/UX
+        & Chapter~5 (architecture, detailed design, and patterns) and Chapter~6 (UI/UX): context-of-use, user profiles, sitemap, user flow, wireframes, usability evaluation
+        & Strong \\[4pt]
+    C08 & Software construction
+        & Chapter~7: coding-style conventions, adversarial code review as formal inspection analogue, refactoring findings
+        & Partial \\[4pt]
+    C09 & Quality assurance: testing and maintenance
+        & Chapter~9: V-model mapping, black-box equivalence partitioning, boundary-value analysis, decision-table testing, white-box CFG examples, regression suite; maintenance classification
+        & Partial \\
+    \bottomrule
+  \end{xltabular}
+}
+
+The project is strongest where the course emphasises artefact production.
+\textbf{C01} coverage is strong because the stakeholder model is rendered
+end-to-end from the glossary through to the role enumeration in the
+implementation.
+\textbf{C04} coverage is strong because Chapter~3 produced the full
+project-management suite --- Work Breakdown Structure, effort estimation, a CPM
+task network with an identified critical path, a Gantt schedule, and a risk
+register scored by Probability~$\times$~Impact with explicit
+Avoid/Transfer/Mitigate/Accept responses.
+\textbf{C06} coverage is strong because the project produced a full SRS together
+with a complementary suite of UML diagrams (use-case, ERD, state machines).
+\textbf{C07} coverage is strong across both the architectural-design half and the
+UI/UX half.  Coverage is partial for \textbf{C02} (the incremental process model
+was followed in practice but not formally justified in a process document),
+\textbf{C05} (a dedicated CM plan exists but IEEE~828 compliance and the exact
+branching strategy are not fully cross-referenced from the main body),
+\textbf{C08} (the adversarial review activity occurred and its findings were
+corrected, but a formal inspection report was not produced as a standalone
+artefact), and \textbf{C09} (white-box CFG examples were added but a complete
+branch-coverage report was out of scope).  Coverage is lightest for \textbf{C03},
+which concerns the team-level Scrum process that is inherently difficult to
+demonstrate through a single design-and-build deliverable.
+
+\section{Lessons Learned}
+
+\begin{itemize}[leftmargin=1.5em, itemsep=4pt]
+
+  \item \textbf{A single source of truth yields cumulative benefit.}
+        Anchoring every API endpoint, front-end widget, and test assertion to the
+        capability schema eliminated an entire class of synchronisation bugs.
+        When the schema changed, the ripple effect was immediately visible
+        rather than silently divergent.
+
+  \item \textbf{Separating requirements from design is not bureaucracy.}
+        Maintaining a discrete SRS before writing the SDD forced the team to
+        confront ambiguities during elicitation rather than during coding.  The
+        \emph{what} document also served as the primary input for the
+        traceability matrix, making acceptance-test authorship straightforward.
+
+  \item \textbf{An adversarial review surfaces defects that a cooperative walkthrough does not.}
+        Running a structured correctness and security review from a
+        non-author perspective (analogous to a formal inspection) surfaced a
+        cross-unit IDOR vulnerability and an unvalidated rule-update path that
+        had survived all prior testing.  Both findings were patched and
+        regression-tested before the final submission.
+
+  \item \textbf{Client elicitation must be documented, not recalled.}
+        The highest-priority acceptance criterion --- VND savings visibility ---
+        was stated clearly in the initial elicitation session; because it was
+        captured in the SRS, the team could verify against it mechanically.
+        Requirements that were held only in memory tended to drift or be
+        deprioritised under time pressure.
+
+  \item \textbf{The process model should be named early, not inferred later.}
+        SHEO was built incrementally --- a working vertical slice first, then
+        features fanned out --- which maps naturally to the Incremental model.
+        Not naming this decision explicitly in the process documentation made the
+        C02 coverage weaker than the actual practice warranted.
+
+  \item \textbf{Mock-before-hardware is a legitimate and traceable scope decision.}
+        Decoupling the device-adapter interface from physical hardware
+        from day one allowed the entire system to be demonstrated and tested
+        without IoT equipment.  The decision was justified in the feasibility
+        study and respected throughout; it did not compromise the architectural
+        validity of the design.
+
+\end{itemize}
+
+\section{Future Work}
+
+Several directions would extend SHEO from a demonstration system to a
+production-grade platform.
+
+\begin{description}[style=nextline, leftmargin=1.5em, itemsep=6pt]
+
+  \item[Real-hardware integration via the device-adapter contract]
+        The existing device-adapter interface and capability schema were
+        designed with physical hardware in mind.  Replacing the mock
+        implementations with drivers for standard IoT messaging protocols
+        would require no changes to the API or front-end layers.  A
+        priority integration target is the smart air-conditioner controller,
+        which accounts for the majority of residential electricity consumption in
+        the Vietnamese context.
+
+  \item[Broader device and capability coverage]
+        Current device types cover air conditioners, lighting, and socket plugs.
+        Extending the capability registry to include water heaters, inverter
+        washing machines, and EV chargers would increase the platform's
+        addressable saving potential without requiring architectural changes,
+        since all device behaviour is expressed through the existing capability
+        schema.
+
+  \item[Horizontal scalability]
+        The present deployment runs as a single application-server process.
+        Introducing a message broker between device adapters and the rule
+        engine, combined with multiple stateless API workers behind a load
+        balancer,
+        would support multi-building deployments and eliminate the single point
+        of failure identified in the NFR-SAF analysis.
+
+  \item[Deeper project-management instrumentation]
+        The project-management plan in Chapter~3 already establishes a Work
+        Breakdown Structure, an effort-estimation table, a CPM schedule with an
+        identified critical path, a Gantt chart, and a risk register.  A
+        follow-on phase could deepen these artefacts with earned-value tracking
+        and periodic re-estimation as the project progresses.  Adopting a formal
+        Scrum process with a maintained Product Backlog, two-week sprints, and a
+        Definition of Done would additionally close the C03 gap and improve
+        team-level visibility during development.
+
+  \item[White-box coverage gate]
+        The current test suite emphasises black-box equivalence partitioning and
+        boundary-value analysis.  Adding an automated branch-coverage gate with a
+        minimum-coverage threshold would provide a C09-compliant white-box
+        verification gate and prevent coverage regression as the codebase grows.
+
+  \item[Richer analytics and personalised insights]
+        The cycle-savings dashboard currently aggregates savings by device and
+        rule.  Future work could incorporate time-series anomaly detection to
+        flag unexpected consumption spikes, comparative benchmarking against
+        similar household profiles, and personalised rule suggestions derived
+        from appliance-usage clustering --- moving SHEO from reactive reporting
+        toward proactive energy intelligence.
+
+\end{description}

@@ -1,0 +1,383 @@
+\chapter{Software Configuration Management}
+
+This chapter documents the Software Configuration Management (SCM) plan for the
+AI-Driven Smart Home Energy Optimizer (SHEO) project. SCM encompasses the
+principles, techniques, and tools used to identify, control, record, and audit
+changes to every work product throughout the project lifecycle. The chapter is
+organised around the five canonical SCM tasks drawn from \textbf{IEEE~828} and
+\textbf{IEEE~1042}: configuration identification, version control, change control,
+configuration audit, and status reporting.
+
+% ----------------------------------------------------------------
+\section{SCM Concepts and Standards}
+\label{sec:scm-concepts}
+% ----------------------------------------------------------------
+
+\subsection{Foundational Terminology}
+
+Software Configuration Management rests on three foundational concepts that must
+be carefully distinguished.
+
+\begin{description}[leftmargin=1.6cm, style=nextline]
+  \item[Configuration Item (CI)]
+    Any artifact placed under version control and governed by the change-control
+    process. A CI is identified by a unique name, a version number, and a
+    designated owner. Examples range from source files and test suites to design
+    documents and dependency manifests. Once a CI is placed under control, any
+    modification to it requires a sanctioned change request.
+
+  \item[Baseline]
+    A formally reviewed, approved, and version-locked set of CIs that serves as
+    the stable foundation for subsequent work. As defined in \textbf{IEEE~828}, a
+    baseline can be changed only through the formal change-control process; ad hoc
+    modifications to baselined artifacts are prohibited. Each baseline corresponds
+    to a project milestone and is recorded as an immutable, annotated marker in the
+    version-control repository.
+
+  \item[Version / Revision / Release]
+    These three terms are distinct and must not be conflated. A \textbf{version}
+    denotes a particular state of a CI at a point in time, identified by a
+    version number of the form \texttt{major.minor.patch} (e.g.\ \texttt{1.0.0}).
+    A \textbf{revision} is a specific change to an existing version, typically
+    addressing a defect or a minor update within the same major--minor line. A
+    \textbf{release} is a version that has been formally approved, baselined, and
+    made available for use or delivery; it implies a completed quality gate and is
+    associated with a milestone tag.
+\end{description}
+
+\subsection{SCM Tasks}
+
+Following \textbf{IEEE~1042}, the SHEO project organises its SCM activity around
+five tasks:
+
+\begin{enumerate}[label=\arabic*.]
+  \item \textbf{Configuration identification} --- naming and registering every CI
+    under control (Section~\ref{sec:scm-cis}).
+  \item \textbf{Version control} --- tracking changes to CIs over time using a
+    distributed version-control system (Section~\ref{sec:scm-vc}).
+  \item \textbf{Change control} --- evaluating, approving, and implementing
+    changes to baselined CIs via a defined process
+    (Section~\ref{sec:scm-change}).
+  \item \textbf{Configuration audit} --- verifying that a baseline is internally
+    consistent and satisfies its requirements
+    (Section~\ref{sec:scm-audit}).
+  \item \textbf{Status reporting} --- recording and communicating the state of
+    every CI and change request over time
+    (Section~\ref{sec:scm-status}).
+\end{enumerate}
+
+% ----------------------------------------------------------------
+\section{Configuration Items in SHEO}
+\label{sec:scm-cis}
+% ----------------------------------------------------------------
+
+The SHEO project identifies seven CI groups. Each group is assigned a short code
+used throughout the change-control and status-accounting logs. Table~\ref{tab:cis}
+lists the groups with their representative artifacts and designated owners.
+
+\begin{longtable}{@{}
+    >{\bfseries}l
+    l
+    L{4.2cm}
+    l
+  @{}}
+\caption{SHEO Software Configuration Items}
+\label{tab:cis} \\
+\toprule
+\textbf{Code} & \textbf{CI Group} & \textbf{Representative Artifacts} & \textbf{Owner} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Code} & \textbf{CI Group} & \textbf{Representative Artifacts} & \textbf{Owner} \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+C1 & Requirements baseline
+   & The approved requirements specification (v1.0) together with its refinement note
+   & Requirements lead \\[4pt]
+C2 & Design \& engineering docs
+   & The software design document, the accompanying structural and behavioural diagrams, and this configuration management plan
+   & Architect \\[4pt]
+C3 & Backend source
+   & The backend service, domain, core, adapter, simulation, persistence, and schema modules together with the data-seeding routine
+   & Backend developers \\[4pt]
+C4 & Frontend source
+   & The client application root, its page and component modules, and its authentication and supporting library code
+   & Frontend developers \\[4pt]
+C5 & Test suite
+   & The shared test fixtures and the eight automated test modules comprising fifty-four cases
+   & QA lead \\[4pt]
+C6 & Build \& dependency manifests
+   & The backend and client dependency and build manifests, with all versions pinned
+   & Build owner \\[4pt]
+C7 & Runtime configuration
+   & The centralised configuration module exposing every requirement-mandated policy threshold, overridable through environment settings
+   & Backend lead \\
+\bottomrule
+\end{longtable}
+
+Several aspects of this identification scheme merit elaboration.
+
+\textbf{Requirements (C1).} The requirements specification is the project's single
+source of truth. Functional and non-functional requirements each carry a structured
+identifier formed from their category and number. These identifiers serve as the
+anchor points for the traceability matrix and are referenced in the recorded
+description of every change, maintaining a complete forward and backward trail
+between requirements, implementation artifacts, and tests.
+
+\textbf{Runtime configuration (C7).} Every policy threshold mandated by the
+requirements is centralised in a single configuration module rather than scattered
+as literal constants throughout the source code. The named thresholds --- among them
+the offline-detection timeout, the savings-baseline window, the drift tolerance, and
+the undo window, each traceable to its governing requirement --- are declared as
+named fields whose defaults can be overridden through environment configuration.
+Treating policy thresholds as configuration data means that a policy change is a
+single, narrowly scoped, reviewable, and baseline-able edit.
+
+\textbf{Build manifests (C6).} The exact version of every backend dependency is
+pinned, and the client dependencies are likewise locked to fixed versions. Pinning is
+what makes a baseline reproducible: each retrieval of the configuration installs an
+identical set of dependency versions.
+
+\textbf{Derived artifacts (non-CIs).} Generated outputs are listed in an ignore
+manifest and are not baselined, as they are fully reproducible from the CIs above.
+These include the backend virtual environment, compiled-bytecode caches, the
+generated runtime database, the installed client dependency tree, and the client
+build output.
+
+% ----------------------------------------------------------------
+\section{Baselines}
+\label{sec:scm-baselines}
+% ----------------------------------------------------------------
+
+A baseline freezes a coherent snapshot of all relevant CIs at a milestone boundary.
+IEEE~828 requires that once a baseline is established, it may be modified only
+through the formal change-control process. In the SHEO project each baseline
+corresponds to an immutable, annotated milestone marker placed on the integration
+line; the marker records the precise revision it identifies, the date, and the
+milestone name.
+
+Table~\ref{tab:baselines} summarises the four project baselines.
+
+\begin{table}[htbp]
+\centering
+\caption{SHEO Project Baselines}
+\label{tab:baselines}
+\begin{tabularx}{\textwidth}{@{} l l Y Y @{}}
+\toprule
+\textbf{Milestone} & \textbf{Marker} & \textbf{CIs Baselined} & \textbf{Entry Criteria} \\
+\midrule
+M1 --- Requirements
+  & M1
+  & C1 (the requirements specification v1.0 and its refinement note), the initial documentation scaffold, and the repository with its ignore manifest
+  & Requirements specification approved by instructor; all requirement identifiers stable \\[6pt]
+M2 --- Design \& skeleton
+  & M2
+  & C2 (the architectural and structural design documents); the backend module skeleton; C6 with pinned dependencies; C7 with all policy thresholds declared
+  & Design reviewed; the skeleton loads cleanly and the backend service starts \\[6pt]
+M3 --- Implementation
+  & M3
+  & C3 (the complete backend services), C4 (all client pages and components), C5 (the full test suite), C7 (all thresholds wired)
+  & All fifty-four automated tests pass; the demonstration seeds twenty-one days of data and the application runs end-to-end \\[6pt]
+M4 --- Release / submission
+  & M4
+  & The entire project: C1--C7 consistent end-to-end; the traceability matrix complete; this configuration management plan
+  & Test gate passing; traceability matrix fully populated; configuration audit passed \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+The M1 baseline constitutes the \textbf{Requirements Baseline}: it freezes the
+requirements specification and makes subsequent design and implementation decisions
+traceable back to an approved set of requirements. The M2 baseline constitutes the
+\textbf{Design Baseline}: the software design document and all architectural figures
+are locked and serve as the authoritative specification for coding. The M3 and M4 baselines
+together constitute the \textbf{Implementation Baseline}: M3 is the first
+fully-running system and M4 is the release-ready, fully-audited delivery. Each
+baseline approval is recorded in the status-accounting log together with the
+milestone marker, the precise revision it identifies, the date, and the list of
+change requests incorporated since the previous baseline.
+
+% ----------------------------------------------------------------
+\section{Version Control and Branch Workflow}
+\label{sec:scm-vc}
+% ----------------------------------------------------------------
+
+\subsection{Tooling}
+
+The project uses a single distributed version-control system (Git) to track changes
+to every CI over time. The entire project --- source code, tests, documents, and
+dependency manifests --- resides in one repository, ensuring that a single baseline
+marker captures every CI at once. No CI is managed outside the repository.
+
+\subsection{Branch Model}
+
+A trunk-plus-feature model is adopted, suited to a small, collocated course team
+where the integration branch must remain continuously releasable.
+
+\begin{description}[leftmargin=1.6cm, style=nextline]
+  \item[Integration line]
+    The sole long-lived line of development. It must always be buildable and pass
+    the full suite of fifty-four automated tests. Changes are never applied to it
+    directly; they arrive exclusively through reviewed merge proposals.
+  \item[Feature branch]
+    A short-lived line of work that diverges from the integration line for each
+    approved change request or new capability. It is discarded once its work has
+    been merged.
+  \item[Fix branch]
+    A short-lived line with the same lifecycle as a feature branch, used
+    specifically for defect corrections.
+\end{description}
+
+Figure~\ref{fig:branch-tikz} illustrates the branch flow schematically.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+  node distance=1.6cm and 2.2cm,
+  commit/.style={circle, draw, fill=gray!20, minimum size=0.55cm, inner sep=0pt,
+                 font=\footnotesize},
+  tag/.style={rectangle, draw=black!60, rounded corners=2pt, fill=yellow!20,
+              font=\tiny, inner sep=2pt},
+  branch/.style={font=\small\itshape},
+  arr/.style={->, >=stealth, thick}
+]
+%% main branch (horizontal)
+\node[commit] (c0) {};
+\node[commit, right=of c0] (c1) {};
+\node[commit, right=of c1] (c2) {};
+\node[commit, right=of c2] (c3) {};
+\draw[arr] (c0) -- (c1);
+\draw[arr] (c1) -- (c2);
+\draw[arr] (c2) -- (c3);
+%% feature branch (above)
+\node[commit, above right=0.9cm and 0.6cm of c0] (f1) {};
+\node[commit, right=1.4cm of f1] (f2) {};
+\draw[arr] (c0) -- (f1);
+\draw[arr] (f1) -- (f2);
+\draw[arr] (f2) -- (c2);
+%% fix branch (below)
+\node[commit, below right=0.9cm and 0.6cm of c1] (b1) {};
+\draw[arr] (c1) -- (b1);
+\draw[arr] (b1) -- (c3);
+%% tags
+\node[tag, above=0.22cm of c0] {M1};
+\node[tag, above=0.22cm of c3] {M2};
+%% labels
+\node[branch, left=0.3cm of c0] {integration};
+\node[branch, above=0.1cm of f1] {feature};
+\node[branch, below=0.1cm of b1] {fix};
+\end{tikzpicture}
+\caption{Schematic branch model: feature and fix branches diverge from the
+         integration line and are merged back after peer review and a passing test
+         gate. Milestone markers (M1, M2, \ldots) denote baseline revisions on the
+         integration line.}
+\label{fig:branch-tikz}
+\end{figure}
+
+\subsection{Commit Conventions}
+
+The recorded description of each change follows a structured convention so that the
+project history remains scannable and every change stays traceable to its origin.
+Each description pairs a change-type --- distinguishing, for instance, a new
+capability, a defect correction, an addition to the test suite, a documentation
+update, an internal restructuring, or routine maintenance --- with the affected
+subsystem and, where applicable, the identifier of the requirement it implements or
+modifies.\footnote{For example, a change introducing conflict detection among
+enabled rules would be recorded as a new capability scoped to the rules subsystem and
+annotated with the functional requirement it satisfies.} Naming the governing
+requirement identifier is mandatory whenever a change implements or modifies a
+requirement, as this is what keeps automated status accounting tractable.
+
+\subsection{Version Numbering}
+
+Software artifacts are versioned according to a three-part
+\emph{major.minor.patch} scheme, with version \texttt{1.0.0} designating the M4
+release. The \textbf{major} digit increments on incompatible interface or data-model
+changes; the \textbf{minor} digit increments on backward-compatible new
+functionality; the \textbf{patch} digit increments on backward-compatible defect
+fixes. The backend declares its own version number, which is advanced as part of the
+same change that establishes a new baseline.
+
+% ----------------------------------------------------------------
+\section{Change Control and Status Reporting}
+\label{sec:scm-change}
+% ----------------------------------------------------------------
+
+\subsection{Change Control Process}
+
+Any modification to a baselined CI --- whether it addresses a new requirement, a
+discovered defect, an adjustment to a policy threshold, or a document revision ---
+must pass through a three-stage change-control process. For a course-sized team this
+process is intentionally lightweight, but the evaluation and review gates are real
+and enforced.
+
+\textbf{Stage~1: Request, Evaluate, and Approve.}
+A team member raises a tracked request describing the proposed change, the CIs
+affected (by code C1--C7), and the requirement identifiers involved. A designated
+reviewer assesses the impact: which requirements are affected, which modules must
+change, which tests must be updated, and --- critically --- whether a baselined CI
+is implicated (changes to a baseline require stronger justification than changes to
+in-progress work). The configuration-control authority approves, defers, or rejects
+the request and records the decision against it.
+
+\textbf{Stage~2: Implement on Branch and Peer-Review.}
+An approved request is implemented on a dedicated short-lived feature or fix branch
+that diverges from the integration line. The implementing developer records the code
+change together with the tests that demonstrate its correctness, naming the relevant
+requirement identifier in each change description. When implementation is complete, a
+merge proposal is opened and a second team member performs a formal peer review,
+verifying correctness, adherence to the three-tier layered architecture, and that
+every change is traceable to an approved requirement. Self-merges are not permitted.
+
+\textbf{Stage~3: Test Gate, Merge, and Release.}
+The full automated test suite of fifty-four cases must pass on the branch before
+merge. This is the non-negotiable merge gate. On passing, the branch is merged into
+the integration line and then discarded. If the merged change completes a milestone,
+the configuration manager establishes the corresponding annotated baseline marker
+(M1--M4) and updates the status-accounting log and traceability matrix.
+
+\subsection{Configuration Status Reporting}
+\label{sec:scm-status}
+
+Configuration status accounting answers three questions for every CI at any point
+in time: \emph{what} changed, \emph{who} made the change, and \emph{when} it was
+made. In the SHEO project, status accounting is maintained through two artefacts.
+
+The \textbf{change register} records every change request and defect with a unique
+identifier, the affected CI codes, the requirement identifiers involved, the current
+state as it advances from raised, through in progress and under review, to merged and
+finally released, and the line of work and merge proposal that resolved it. The
+change identifier is carried through to the line of work and the recorded change
+descriptions, providing a complete forward and backward audit trail.
+
+The \textbf{baseline log} records, for each milestone, its marker, the precise
+revision it identifies, the calendar date, and the list of change identifiers
+incorporated since the preceding baseline. This log is the canonical record of what
+the project delivered at each stage and forms the primary input to the configuration
+audit.
+
+\subsection{Configuration Audit}
+\label{sec:scm-audit}
+
+Two complementary audits are performed at each milestone, and most rigorously at
+the M4 release baseline:
+
+\begin{description}[leftmargin=1.6cm, style=nextline]
+  \item[Functional Configuration Audit (FCA)]
+    Verifies that the baseline satisfies all requirements assigned to it. Evidence
+    is the requirements-to-implementation traceability matrix, which maps each
+    requirement identifier to the implementing module and routine and to the test
+    case that exercises it, combined with a fully passing run of the test suite.
+
+  \item[Physical Configuration Audit (PCA)]
+    Verifies that the baseline contains exactly the expected CIs (C1--C7) at their
+    declared versions, and that all derived artifacts are absent (governed by the
+    ignore manifest). The auditor checks the contents identified by the baseline
+    marker against the CI catalogue in Section~\ref{sec:scm-cis}.
+\end{description}
+
+Together these two audits provide the assurance required by IEEE~828 that the
+released configuration is both correct and complete, closing the SCM lifecycle for
+each milestone.

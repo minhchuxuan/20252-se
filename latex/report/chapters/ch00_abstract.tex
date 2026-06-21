@@ -1,0 +1,26 @@
+\chapter*{Abstract}
+\addcontentsline{toc}{chapter}{Abstract}
+
+This report documents the design and verification of the \textbf{AI-Driven Smart Home Energy
+Optimizer (SHEO)}, a capability-driven Internet-of-Things energy-management system
+built for the course \emph{IT3180E --- Introduction to Software Engineering}. SHEO models a
+single apartment building: a building owner oversees every unit while each resident
+monitors the real-time power and cumulative energy of their own unit's devices, controls them
+through a generic interface that is generated from a declarative \emph{capability schema},
+learns daily usage habits, and turns those habits into explainable \mbox{WHEN--THEN}
+automation rules. Its defining feature, and the priority the client emphasised during
+elicitation, is that every rule is priced: the system estimates and displays, in
+Vietnamese dong (VND), the electricity bill a unit would save by adopting a suggested
+rule, and tracks the saving actually achieved within the current billing cycle.
+
+The system is implemented as a three-tier, layered application --- a React single-page
+client over a FastAPI service layer and a SQLite data tier --- with a deterministic mock
+device simulator standing in for physical hardware, and is covered by 61 automated tests.
+
+Rather than describing only the product, the report is organised to demonstrate the full
+software-engineering lifecycle taught across lectures C01--C09: software-engineering
+context and stakeholders, development process, project management, requirements
+engineering, architecture and detailed design, user-interface design, software
+construction, configuration management, and verification, validation, and maintenance.
+Each chapter names the relevant course concepts and traces them to concrete evidence in
+the SHEO project.
