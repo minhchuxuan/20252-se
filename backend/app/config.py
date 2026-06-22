@@ -39,6 +39,7 @@ class Settings(BaseSettings):
     # --- Optimization / bill-saving (REQ-4.5.x) ---
     baseline_days: int = 14                   # REQ-4.5.1: 14-day baseline
     savings_drift_threshold: float = 0.20     # REQ-4.5.5: +/-20% -> needs recalculation
+    savings_drift_min_days: float = 3.0       # don't judge drift until a rule has been observed this long
     default_tariff_vnd_per_kwh: float = 2500.0  # manual fallback (Business Rule, REQ Tariff)
 
     # --- Habit learning / recommendations (REQ-4.4.x) ---
@@ -55,6 +56,10 @@ class Settings(BaseSettings):
     # --- Localization (Other Requirements 6.2) ---
     currency: str = "VND"
     default_locale: str = "vi"
+    # Local timezone used to evaluate user-facing schedules (rule time/day conditions
+    # and tariff peak/off-peak windows). Timestamps are still stored in UTC; only the
+    # *interpretation* of a wall-clock time like "19:00" is localised to this zone.
+    timezone: str = "Asia/Ho_Chi_Minh"
 
     # --- Demo seeding & background tasks ---
     seed_history_days: int = 21               # > 14 baseline and > 7 recommendation window

@@ -1,7 +1,7 @@
 \chapter{Software Construction}
 \label{chap:construction}
 
-Software construction, as defined in Lecture~C08, is the activity of converting a
+Software construction is the activity of converting a
 detailed design into working, maintainable code. It encompasses not only typing
 instructions into an editor but also the discipline that surrounds that act: a
 consistent coding style, a modular decomposition that hides complexity behind stable
@@ -34,10 +34,10 @@ The technology stack was chosen to support those goals directly.
 Language & A modern, statically hinted dynamic language &
   Its rich type-hint system, value-object facilities, and a mature standard library
   reduce the volume of boilerplate that obscures intent. \\
-Web framework & A declarative Python web framework &
+Web framework & A declarative Python web framework~\cite{fastapi} &
   Routes, dependency injection, and request and response schemas are declared
   together, making the interface layer self-documenting without a separate tool. \\
-Persistence & A mature object-relational mapper &
+Persistence & A mature object-relational mapper~\cite{sqlalchemy} &
   The repository pattern is natural to it; queries are isolated from
   service logic, realising the information-hiding goal at the persistence boundary. \\
 Data validation & A type-driven validation library &
@@ -47,7 +47,7 @@ Relational store & A file-backed embedded database &
   Eliminating an external database server removes an infrastructure dependency during
   development and testing, keeping the test suite fast and reproducible. \\
 \midrule
-User-interface framework & A component-based front-end framework &
+User-interface framework & A component-based front-end framework~\cite{react} &
   Component-based decomposition mirrors the backend service decomposition, giving
   each screen a single owner and a single reason to change. \\
 Charting & A declarative charting library &
@@ -60,7 +60,7 @@ Charting & A declarative charting library &
 \section{Coding style and conventions}
 \label{sec:coding-style}
 
-Lecture~C08 identifies six coding-style principles: \emph{consistency},
+Six coding-style principles guide the codebase: \emph{consistency},
 \emph{clarity}, \emph{single-purpose methods}, \emph{fewer than six parameters},
 \emph{naming} (verbs for functions, nouns for classes and variables), and
 \emph{comments that describe what, not how}. SHEO adheres to each, enforced by
@@ -96,7 +96,7 @@ Type annotations are declared on every public operation. Return types,
 parameter types, and the element types of collections are all stated, converting the
 type system into a machine-checked expression of each operation's contract. The
 capability-validation routine is representative of the single-purpose, narrow-parameter
-style the course advocates.
+house style.
 
 \label{lst:validate}%
 The routine accepts a device type, the name of a control, and a proposed value, and
@@ -120,8 +120,9 @@ chosen to isolate a design decision that is likely to change.
 
 \subsection{Repositories hide persistence}
 
-The persistence layer is organised into repositories---one for devices and one for the
-per-device permission records---that encapsulate all query construction. Service code
+The persistence layer is organised into repositories---one per aggregate (for example,
+one for devices and one for the per-device permission records)---that encapsulate all
+query construction. Service code
 never assembles a query predicate directly; it invokes named operations such as a
 unit-scoped query that returns every device belonging to a given unit, or a membership
 check that confirms a particular device belongs to a particular unit, and receives
@@ -158,11 +159,11 @@ invisible to the service.
 \section{Refactoring and code smells}
 \label{sec:refactoring}
 
-Refactoring, as defined in C08, is the transformation of the internal structure of
+Refactoring~\cite{fowler} is the transformation of the internal structure of
 code without changing its observable behaviour. Its purpose is to remove \emph{code
 smells}---structural problems that make software harder to understand, test, or
-extend---prior to the addition of new capability. The canonical smells named in the
-course include duplicated code, long method, large class, too many parameters,
+extend---prior to the addition of new capability. Common code smells
+include duplicated code, long method, large class, too many parameters,
 divergent change, lazy class, speculative generality, and temporary field.
 
 Two concrete refactoring decisions made during SHEO construction directly address
@@ -203,18 +204,18 @@ type, and removed all per-operation checks. Every operation now delegates to tha
 routine by way of the command-application entry point; the capability schema is the
 single source of truth.
 
-Both refactorings satisfy the C08 criterion: no behaviour changed---the automated test
+Both refactorings satisfy the defining criterion of refactoring: no behaviour changed---the automated test
 suite continued to pass at every intermediate step---but the internal structure became
 easier to reason about and to extend.
 
 \section{Code review}
 \label{sec:code-review}
 
-Lecture~C08 distinguishes two review processes. A \textbf{walkthrough} is author-led
+Two review processes are commonly distinguished. A \textbf{walkthrough} is author-led
 and informal: the author guides peers through the code, gathering suggestions. A
 \textbf{formal inspection} is conducted by non-authors against a pre-defined
-checklist; the author is present but does not lead. The course identifies three review
-criteria: \emph{maintainability} (can the code be changed safely?),
+checklist; the author is present but does not lead. Three review
+criteria are applied: \emph{maintainability} (can the code be changed safely?),
 \emph{reusability} (can components be used in other contexts?), and
 \emph{extensibility} (can the system accommodate new requirements without pervasive
 edits?).
@@ -272,12 +273,12 @@ time.
 
 \subsection{Review criteria mapped to SHEO mechanisms}
 
-Table~\ref{tab:review-criteria} maps each C08 review criterion to the mechanism
+Table~\ref{tab:review-criteria} maps each review criterion to the mechanism
 that satisfies it after the inspection.
 
 \begin{table}[htbp]
 \centering
-\caption{C08 code review criteria and the corresponding SHEO mechanisms
+\caption{Code review criteria and the corresponding SHEO mechanisms
 post-inspection.}
 \label{tab:review-criteria}
 \begin{tabularx}{\textwidth}{L{0.22\textwidth} Y Y}
@@ -312,5 +313,5 @@ because a defensive pattern established in one service had not been propagated t
 newer interface operation, and the unvalidated rule update arose because a boundary
 guarantee had been applied inconsistently. Both are the kind of defect that is invisible to the
 original author---who knows the intent---and visible to a non-author reviewer who
-tests the code against the stated contract. This is precisely the rationale that C08
-gives for requiring formal inspections rather than relying on walkthroughs alone.
+tests the code against the stated contract. This is precisely the rationale for
+requiring formal inspections rather than relying on walkthroughs alone.

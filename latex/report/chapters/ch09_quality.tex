@@ -4,10 +4,13 @@
 This chapter documents the quality-assurance programme of the Smart Home Energy
 Optimizer (SHEO). It establishes the conceptual vocabulary of software quality,
 positions the project's testing effort within the classical V-model, and then
-demonstrates \emph{both} families of dynamic testing required of a rigorous
-verification campaign: black-box (specification-based) testing and white-box
-(structure-based) testing. The discussion is grounded in the project's
-\textbf{65 automated tests} and concludes with a requirements-to-tests
+presents the testing campaign \emph{organised by V-model level} --- unit,
+integration and system testing --- as required for the client acceptance test.
+Each level opens with a statement of its objectives, scope and approach, and then
+lists its test cases in a uniform $\langle$test case, input, expected output,
+status$\rangle$ form, with the design technique (a standard white-box or black-box
+technique) indicated for each. The discussion is grounded in the project's
+\textbf{67 automated tests} and concludes with a requirements-to-tests
 traceability summary and a forward-looking classification of anticipated
 maintenance.
 
@@ -32,7 +35,7 @@ each artefact conforms to its specification and to the artefact that preceded it
 product?'' --- it is the user-facing check that the delivered system actually
 satisfies the stakeholder's real needs. In SHEO, verification is realised by the
 unit and integration tests that confirm the implementation honours its
-contracts, while validation is realised by the system and acceptance tests that
+contracts, while validation is realised by the system tests that
 exercise the application through its public interface against the acceptance
 criteria agreed with the customer --- here the SHEO stakeholder in the IEEE
 sense, namely the Administrator who commissions and accepts the system. The two
@@ -45,72 +48,32 @@ wrong), which is precisely why both arms of the V-model below are required.
 
 The \emph{V-model} arranges the software life-cycle so that every constructive
 (development) phase on the descending left arm is paired with a corresponding
-destructive (test) phase on the ascending right arm. The horizontal links express
-the principle that the test cases for a level are derived from, and validate
-against, the artefact produced by the phase opposite it: acceptance tests are
-written against the requirements, system tests against the architecture, and
-integration tests against the detailed design, and so on.
-Figure~\ref{fig:vmodel} draws the model and maps SHEO's concrete test
-levels onto it.
-
-\begin{figure}[H]
-\centering
-\resizebox{\linewidth}{!}{%
-\begin{tikzpicture}[
-    node distance=6mm,
-    box/.style={draw, rounded corners, align=center, minimum height=8mm,
-                minimum width=30mm, font=\small},
-    dev/.style={box, fill=blue!8},
-    test/.style={box, fill=green!10},
-    link/.style={dashed, -{Latex[length=2mm]}, gray},
-    flow/.style={-{Latex[length=2mm]}, thick}
-]
-% Left (development) arm, descending
-\node[dev] (req)  {Requirements\\analysis};
-\node[dev] (arch) [below=of req, xshift=10mm]  {Architectural\\design};
-\node[dev] (dd)   [below=of arch, xshift=10mm] {Detailed\\design};
-\node[dev] (code) [below=of dd, xshift=10mm]   {Coding};
-% Right (test) arm, ascending
-\node[test] (acc) [right=42mm of req]  {Acceptance\\testing};
-\node[test] (sys) [below=of acc, xshift=-10mm]  {System\\testing};
-\node[test] (int) [below=of sys, xshift=-10mm]  {Integration\\testing};
-\node[test] (unit)[below=of int, xshift=-10mm]  {Unit\\testing};
-% Development flow
-\draw[flow] (req)  -- (arch);
-\draw[flow] (arch) -- (dd);
-\draw[flow] (dd)   -- (code);
-% Coding to unit testing (bottom of the V)
-\draw[flow] (code) -- (unit);
-% Test flow (ascending)
-\draw[flow] (unit) -- (int);
-\draw[flow] (int)  -- (sys);
-\draw[flow] (sys)  -- (acc);
-% Horizontal verification/validation links
-\draw[link] (req)  -- (acc) node[midway, above, font=\scriptsize] {validates};
-\draw[link] (arch) -- (sys) node[midway, above, font=\scriptsize] {verifies};
-\draw[link] (dd)   -- (int) node[midway, above, font=\scriptsize] {verifies};
-\end{tikzpicture}}
-\caption{The V-model mapped onto SHEO. Each development phase (left, shaded blue)
-is checked by the test level opposite it (right, shaded green): the topmost link
-\emph{validates} the requirements against the stakeholder's real needs, while the
-lower links \emph{verify} each design artefact against its specification. Dashed
-links denote the artefact each test level is derived from.}
-\label{fig:vmodel}
-\end{figure}
+destructive (test) phase on the ascending right arm: requirements analysis with
+acceptance testing, architectural design with system testing, detailed design with
+integration testing, and coding with unit testing. The test cases for a level are
+derived from, and validate against, the artefact produced by the phase opposite it ---
+acceptance tests against the requirements, system tests against the architecture,
+integration tests against the detailed design, and so on. Crucially, the model also
+dictates \emph{which family of test-case design technique} dominates at each level:
+\textbf{white-box} (structural) techniques are applied where the internal structure
+is the object under test --- unit and integration testing --- while \textbf{black-box}
+(specification-based) techniques are applied where only externally visible behaviour
+matters --- system and acceptance testing.
 
 SHEO populates every level of the right arm. \emph{Unit testing} exercises the
 pure domain functions in isolation; \emph{integration testing} drives the wired
 stack (API router $\rightarrow$ service $\rightarrow$ repository $\rightarrow$
-persistence) across real boundaries; \emph{system testing} asserts aggregate,
-user-visible outputs end-to-end on a fully seeded application; and
-\emph{acceptance testing} demonstrates the customer's acceptance focus items.
+persistence) across real boundaries; and \emph{system testing} asserts aggregate,
+user-visible outputs end-to-end on a fully seeded application. \emph{Acceptance
+testing} is then realised by re-running the system suite against the demonstration
+seed in front of the customer, validating the acceptance focus items.
 The sequence-level interactions that integration tests confirm are illustrated in
 the design chapter (Figure~\ref{fig:seq-control}).
 
 \section{Test Strategy and Levels}
 \label{sec:qa-strategy}
 
-The automated suite comprises \textbf{65 tests}. It runs in-process against the
+The automated suite comprises \textbf{67 tests}. It runs in-process against the
 application's public interface using an in-memory test harness, requiring no live
 server, network or hardware; a disposable database is recreated for each run, so
 the suite is fully deterministic. The split between levels is physical: pure-logic
@@ -122,8 +85,8 @@ $\langle$input, expected outcome$\rangle$: an input (or input sequence) is appli
 and the actual result is compared against an \emph{expected output that is defined
 in advance}, never inferred after observing the program. A collection of such
 cases that share a fixture and a target constitutes a \emph{test suite} --- the
-project organises its tests into nine such suites, each devoted to one
-cross-cutting concern. The strategy observes three classical testing principles:
+project organises its tests into nine such suites. The strategy observes three
+classical testing principles:
 
 \begin{itemize}[leftmargin=1.4em]
   \item the \textbf{tester $\ne$ developer} separation of concern: tests are
@@ -136,150 +99,58 @@ cross-cutting concern. The strategy observes three classical testing principles:
         accidental breakage.
 \end{itemize}
 
-Table~\ref{tab:levels} summarises how the 65 tests distribute across the four
-levels.
+Table~\ref{tab:levels} summarises how the levels, their objectives, the dominant
+design-technique family, and the suites that populate them line up. The three
+following sections take each level in turn; in their test-case tables the
+\emph{Status} column records the outcome of the most recent run --- all
+\textbf{67 tests pass}.
 
 \begin{table}[htbp]
 \centering
-\caption{Distribution of the 65 automated tests across V-model levels.}
+\caption{Test levels, their dominant test-case design technique, and the covering
+suites.}
 \label{tab:levels}
-\begin{tabularx}{\textwidth}{@{}l L{0.52\textwidth} Y@{}}
+\begin{tabularx}{\textwidth}{@{}l L{0.30\textwidth} L{0.24\textwidth} Y@{}}
 \toprule
-\textbf{Level} & \textbf{What it checks} & \textbf{Representative target} \\
+\textbf{Level} & \textbf{Objective / scope} & \textbf{Technique family} & \textbf{Suites} \\
 \midrule
-Unit        & Pure domain functions in isolation: capability validation,
-              tariff pricing, billing-cycle and time utilities, simulator energy
-              model, password hashing. & the pure-domain logic suite \\
-Integration & Multiple layers cooperating across a real boundary: the wired
-              request path through service, repository and persistence, plus the
-              event bus and adapter wiring. & the device-capability and rules
-              suites \\
-System      & End-to-end behaviour of a fully seeded application through public
-              endpoints: dashboards, reports, recommendations, savings. &
-              the monitoring and savings suites \\
-Acceptance  & The customer's acceptance focus items, realised by the union of the
-              system and integration tests against the demonstration seed. & (see
-              Section~\ref{sec:qa-results}) \\
+Unit        & Pure domain functions in isolation (no HTTP, no DB) &
+              White-box: statement, branch and path coverage &
+              \texttt{unit\_domain} \\
+Integration & Wired components cooperating across real boundaries
+              (router/service/repository/persistence, event bus, adapters) &
+              White-box: branch and decision coverage of the integrated path &
+              \texttt{devices\_capability}, \texttt{rules}, \texttt{safety} \\
+System      & End-to-end, user-visible behaviour through the public REST API &
+              Black-box: equivalence partitioning, boundary-value analysis,
+              decision tables, state-based &
+              \texttt{monitoring}, \texttt{savings}, \texttt{recommendations},
+              \texttt{auth\_rbac}, \texttt{admin} \\
 \bottomrule
 \end{tabularx}
 \end{table}
 
-\section{Black-box Testing}
-\label{sec:qa-blackbox}
+\section{Unit Testing (White-box)}
+\label{sec:qa-unit}
 
-Black-box (specification-based) testing derives test cases from the external
-specification of a component without reference to its internal structure. The
-suite deliberately applies three systematic black-box design techniques rather
-than choosing inputs ad hoc.
+\paragraph{Objective.} Verify the algorithms and internal structure of the
+project's pure domain functions in isolation, confirming each computes the right
+result on every branch of its logic.
 
-\subsection{Equivalence Partitioning}
-\label{sec:qa-ep}
+\paragraph{Scope.} The functions with no transport or persistence dependency: the
+capability \emph{validator}, the tariff math (flat and tiered pricing), the
+billing-cycle and time-window utilities, the simulator energy model, and password
+hashing. These are reached by direct function call --- no HTTP, no database.
 
-\emph{Equivalence partitioning} divides the input domain into classes within
-which the program is expected to behave identically, so that one representative
-per class suffices. The air-conditioner target-temperature control accepts an
-integer temperature in the closed range $[16, 30]$ degrees Celsius. Its domain
-partitions into three classes:
-
-\begin{itemize}[leftmargin=1.4em]
-  \item a \textbf{valid} class --- any value inside $[16, 30]$ (representative:
-        $23$), expected to be accepted;
-  \item an \textbf{invalid-low} class --- values below $16$, expected to be
-        rejected;
-  \item an \textbf{invalid-high} class --- values above $30$, expected to be
-        rejected.
-\end{itemize}
-
-The principle generalises beyond numeric ranges. The enumerated-and-toggle
-partitioning test divides such controls into valid representatives (a valid mode
-and power setting) and invalid ones (an invalid mode; an invalid power value),
-while a companion test treats an unsupported control (for instance a brightness
-setting directed at a device that has none) as its own invalid class.
-
-\subsection{Boundary Value Analysis}
-\label{sec:qa-bva}
-
-\emph{Boundary value analysis} (BVA) exploits the empirical observation that
-faults cluster at the edges of equivalence classes. For the $[16, 30]$ range it
-prescribes testing each boundary, its immediate neighbour just outside, and a
-nominal interior value. Table~\ref{tab:bva} gives the canonical BVA set, plus an
-out-of-domain negative value; all six cases are run as a single parametrised
-boundary test driven directly against the capability-validation routine.
-
-\begin{table}[htbp]
-\centering
-\caption{Boundary value analysis for the air-conditioner target range $[16, 30]$.}
-\label{tab:bva}
-\begin{tabular}{@{}c l c@{}}
-\toprule
-\textbf{Input} & \textbf{Class} & \textbf{Expected} \\
-\midrule
-$16$  & lower boundary (valid)            & accept \\
-$30$  & upper boundary (valid)            & accept \\
-$23$  & nominal interior                  & accept \\
-$15$  & just below lower boundary         & reject \\
-$31$  & just above upper boundary         & reject \\
-$-5$  & far invalid (negative)            & reject \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-This realises the canonical ``min, $\text{min}-1$, max, $\text{max}+1$,
-nominal'' boundary set: the value $16$ exercises the $\ge \text{min}$ guard, $15$
-its lower neighbour, $30$ the $\le \text{max}$ guard, and $31$ its upper
-neighbour.
-
-\subsection{Decision-table Testing}
-\label{sec:qa-dt}
-
-When an outcome depends on a \emph{combination} of conditions, a
-\emph{decision table} enumerates the relevant condition combinations (rules) and
-their required actions, ensuring that no combination is overlooked. The outcome
-of a device command depends on whether the device is online, whether the value is
-in range, and whether the command is suppressed for safety (a safety-critical
-auto power-off, or a rate-limited compressor command). The resulting outcomes are
-\textsc{success}, \textsc{rejected}, \textsc{timeout} and \textsc{skipped}.
-Table~\ref{tab:decision} captures the rules and describes the test that exercises
-each.
-
-\begin{table}[htbp]
-\centering
-\caption{Decision table for command outcomes. ``--'' denotes a condition whose
-value is irrelevant once an earlier condition has determined the outcome.}
-\label{tab:decision}
-\begin{tabularx}{\textwidth}{@{}c c c >{\centering\arraybackslash}p{0.16\textwidth} L{0.34\textwidth}@{}}
-\toprule
-\textbf{Online?} & \textbf{In range?} & \textbf{Safety-blocked?} & \textbf{Outcome} & \textbf{Covering test} \\
-\midrule
-no  & --  & --  & \textsc{timeout}  & the offline-command timeout test \\
-yes & no  & --  & \textsc{rejected} & the out-of-range rejection test \\
-yes & yes & yes & \textsc{skipped}  & the safety-critical auto-power-off suppression test \\
-yes & yes & yes & \textsc{rejected} & the compressor rate-limit test \\
-yes & yes & no  & \textsc{success}  & the in-range acceptance test \\
-\bottomrule
-\end{tabularx}
-\end{table}
-
-A related decision table over the conditions (temperature change?),
-(safety-critical tag?) and (unattended power-off?) governs the validation
-\emph{warnings} surfaced to the user, and is exercised by the safety-warning
-validation test.
-
-\section{White-box Testing}
-\label{sec:qa-whitebox}
-
-White-box (structure-based) testing derives test cases from the internal control
-structure of the code, with the goal of executing its statements, branches and
-paths. We analyse the range-validation logic of the capability-validation routine
---- the procedure that enforces the $[16, 30]$ contract tested above. For a
-range-typed control it proceeds through a fixed sequence of guarded steps: it
-first coerces the supplied value to a number and rejects it if that is not
-possible; it then rejects any value below the declared minimum, and any value
-above the declared maximum; for a control declared with an integer step it
-rounds the value to a whole number; and finally it accepts the normalised value.
-The corresponding \emph{control flow graph} (CFG), in which decisions are drawn
-as diamonds and basic blocks as rectangles, is given in Figure~\ref{fig:cfg};
-its numbered nodes correspond to these steps.
+\paragraph{Approach.} \emph{Control-flow testing}: for each function we reason
+about its control flow graph (CFG) and select concrete inputs that achieve
+\textbf{statement}, \textbf{branch} and, for the small functions, full
+\textbf{path} coverage. As the worked example, take the air-conditioner
+target-temperature guard, whose valid range is the fixed, deterministic interval
+$16$--$30\,$\textdegree C. It rejects a non-numeric value, rejects a value below
+$16$, rejects a value above $30$, and otherwise accepts. Its CFG
+(Figure~\ref{fig:cfg}) has three decisions --- nodes 2, 4 and 6 --- and four
+feasible paths.
 
 \begin{figure}[H]
 \centering
@@ -293,79 +164,288 @@ its numbered nodes correspond to these steps.
     ok/.style={draw, ellipse, align=center, font=\scriptsize, fill=green!12},
     edge/.style={-{Latex[length=2mm]}}
 ]
-\node[block] (n1) {1: float(value)};
-\node[dec]   (n1d) [below=of n1] {numeric?};
-\node[term]  (n2)  [right=of n1d] {2: reject\\``numeric''};
-\node[dec]   (n3)  [below=of n1d] {3: num\\$<$ min?};
-\node[term]  (n4)  [right=of n3] {4: reject\\``$\ge$ min''};
-\node[dec]   (n5)  [below=of n3] {5: num\\$>$ max?};
-\node[term]  (n6)  [right=of n5] {6: reject\\``$\le$ max''};
-\node[dec]   (n7)  [below=of n5] {7: step?};
-\node[block] (n8)  [right=of n7] {8: round};
-\node[ok]    (n9)  [below=of n7] {9: accept};
+\node[block] (n1) {1: read $v$};
+\node[dec]   (n2) [below=of n1] {2: numeric?};
+\node[term]  (n3) [right=of n2] {3: reject\\``not numeric''};
+\node[dec]   (n4) [below=of n2] {4: $v < 16$?};
+\node[term]  (n5) [right=of n4] {5: reject\\``below 16''};
+\node[dec]   (n6) [below=of n4] {6: $v > 30$?};
+\node[term]  (n7) [right=of n6] {7: reject\\``above 30''};
+\node[ok]    (n8) [below=of n6] {8: accept $v$};
 
-\draw[edge] (n1)  -- (n1d);
-\draw[edge] (n1d) -- node[above,font=\tiny]{no} (n2);
-\draw[edge] (n1d) -- node[right,font=\tiny]{yes} (n3);
-\draw[edge] (n3)  -- node[above,font=\tiny]{yes} (n4);
-\draw[edge] (n3)  -- node[right,font=\tiny]{no} (n5);
-\draw[edge] (n5)  -- node[above,font=\tiny]{yes} (n6);
-\draw[edge] (n5)  -- node[right,font=\tiny]{no} (n7);
-\draw[edge] (n7)  -- node[above,font=\tiny]{yes} (n8);
-\draw[edge] (n7)  -- node[right,font=\tiny]{no} (n9);
-\draw[edge] (n8)  |- (n9);
+\draw[edge] (n1) -- (n2);
+\draw[edge] (n2) -- node[above,font=\tiny]{no}  (n3);
+\draw[edge] (n2) -- node[right,font=\tiny]{yes} (n4);
+\draw[edge] (n4) -- node[above,font=\tiny]{yes} (n5);
+\draw[edge] (n4) -- node[right,font=\tiny]{no}  (n6);
+\draw[edge] (n6) -- node[above,font=\tiny]{yes} (n7);
+\draw[edge] (n6) -- node[right,font=\tiny]{no}  (n8);
 \end{tikzpicture}
-\caption{Control flow graph of the range-validation branch of the
-capability-validation routine. Diamonds are decisions; red terminals are
-rejections; the green terminal is the accepting return. Numbers correspond to the
-guarded steps described above.}
+\caption{Control flow graph of the air-conditioner target guard, with the fixed
+deterministic range $16$--$30\,$\textdegree C. Diamonds are decisions; red
+terminals are rejections; the green terminal accepts. The three decisions yield
+four feasible paths, each reachable by a concrete input.}
 \label{fig:cfg}
 \end{figure}
 
-The CFG exposes four decisions (nodes 1, 3, 5, 7) and therefore eight branch
-outcomes. Table~\ref{tab:coverage} gives a small set of
-$\langle$input $\rightarrow$ expected$\rangle$ cases that, taken together, achieve
-\emph{path} coverage of this subgraph (every feasible execution path), which
-subsumes both branch and statement coverage.
+Each path corresponds to one concrete input. Table~\ref{tab:cfg-unit} gives a real
+input for every path, the node sequence it follows, and its expected output;
+together they exercise every branch and so achieve path coverage (which subsumes
+branch and statement coverage).
 
 \begin{table}[htbp]
 \centering
-\caption{White-box coverage cases for the range branch (air-conditioner target,
-with an integer step of $1$). The node sequence shows the path taken.}
-\label{tab:coverage}
-\begin{tabularx}{\textwidth}{@{}l c L{0.30\textwidth} Y@{}}
+\caption{Path coverage of the air-conditioner target guard ($16$--$30\,$\textdegree
+C) with real inputs.}
+\label{tab:cfg-unit}
+\begin{tabularx}{\textwidth}{@{}l l Y@{}}
 \toprule
-\textbf{Input} & \textbf{Expected} & \textbf{Path (nodes)} & \textbf{Exercises} \\
+\textbf{Input $v$} & \textbf{Path (nodes)} & \textbf{Expected output} \\
 \midrule
-non-numeric    & reject (not numeric) & $1 \rightarrow 2$           & node-1 false branch \\
-$15$           & reject ($<$ min)     & $1 \rightarrow 3 \rightarrow 4$ & node-3 true branch \\
-$31$           & reject ($>$ max)     & $1 \rightarrow 3 \rightarrow 5 \rightarrow 6$ & node-5 true branch \\
-$23$           & accept (rounded)     & $1 \rightarrow 3 \rightarrow 5 \rightarrow 7 \rightarrow 8 \rightarrow 9$ & node-7 true, normalising path \\
+\texttt{"hot"} (non-numeric) & $1\rightarrow2\rightarrow3$ & reject --- not a number \\
+$15$ & $1\rightarrow2\rightarrow4\rightarrow5$ & reject --- below 16 \\
+$31$ & $1\rightarrow2\rightarrow4\rightarrow6\rightarrow7$ & reject --- above 30 \\
+$23$ & $1\rightarrow2\rightarrow4\rightarrow6\rightarrow8$ & accept \\
 \bottomrule
 \end{tabularx}
 \end{table}
 
-The four cases above execute all eight branch outcomes (node 7's false branch is
-taken by any range control declared without an integer step, e.g. a continuous
-control), and in doing so visit every statement node, so they satisfy branch and
-statement coverage as well. This illustrates the standard \emph{subsumption}
-ordering of coverage strength:
-\[
-  \text{path coverage} \;\ge\; \text{branch coverage} \;\ge\; \text{statement coverage},
-\]
-that is, achieving a stronger criterion guarantees the weaker ones but not
-conversely. The boundary inputs $15$, $23$ and $31$ from Table~\ref{tab:bva} thus
-do double duty: chosen by black-box BVA, they also drive the most fault-prone
-branches of the white-box CFG.
+The boundary values $16$ and $30$ follow the accepting path
+$1\rightarrow2\rightarrow4\rightarrow6\rightarrow8$, $15$ and $31$ are their
+just-outside neighbours on the two rejecting branches, and a non-numeric value
+(\texttt{"hot"}) takes the remaining path $1\rightarrow2\rightarrow3$; these are
+exactly the inputs of UT-1 in Table~\ref{tab:unit-cases}, so that one parametrised
+test achieves path coverage of the guard. Table~\ref{tab:unit-cases} lists the full
+unit suite.
+
+\begin{table}[htbp]
+\centering
+\caption{Unit-level test cases (suite \texttt{unit\_domain}); white-box
+control-flow coverage. All pass.}
+\label{tab:unit-cases}
+{\footnotesize
+\begin{tabularx}{\textwidth}{@{}L{0.215\textwidth} X X c L{0.085\textwidth}@{}}
+\toprule
+\textbf{Test case} & \textbf{Input} & \textbf{Expected output} & \textbf{Status} & \textbf{Technique} \\
+\midrule
+UT-1 \texttt{ac\_target\_boundaries} & AC target $=16,30,23$ / $15,31,$ \texttt{"hot"} & accept / reject & Pass & Path cov. \\
+UT-2 \texttt{validate\_rejects\_unknown\_control} & plug, control ``brightness''$=50$ & reject (``no control'') & Pass & Branch cov. \\
+UT-3 \texttt{validate\_enum\_and\_toggle} & fan mode \texttt{sleep}/\texttt{turbo}; plug power \texttt{on}/\texttt{maybe} & accept / reject & Pass & Branch cov. \\
+UT-4 \texttt{sensor\_is\_readonly} & capability of a sensor & no controls (empty) & Pass & Stmt cov. \\
+UT-5 \texttt{flat\_tariff\_pricing} & flat 2000 VND/kWh, 10 kWh & 20\,000 VND & Pass & Stmt cov. \\
+UT-6 \texttt{tiered\_tariff\_is\_progressive} & tiers 50@1000 / rest@3000, 100 kWh & 200\,000 VND; marginal@120 $=3000$ & Pass & Path cov. \\
+UT-7 \texttt{billing\_cycle\_contains\_now} & ts 2026-06-15, billing day 1 & cycle Jun 1 $\le$ ts $<$ Jul 1 & Pass & Branch cov. \\
+UT-8 \texttt{hour\_set\_wraps\_midnight} & window 22:00--04:00 & $\{22,23,0,1,2,3\}$ & Pass & Branch cov. \\
+UT-9 \texttt{simulator\_ac\_savings\_differential} & AC at 24\,\textdegree C vs 26\,\textdegree C, 1 day & kWh(24) $>$ kWh(26) $> 0$ & Pass & Path / data-flow \\
+UT-10 \texttt{password\_hash\_roundtrip} & hash(``s3cret-pw'') & hash $\ne$ plaintext; verify ok/$\times$ & Pass & Branch cov. \\
+\bottomrule
+\end{tabularx}}
+\end{table}
+
+\section{Integration Testing (White-box)}
+\label{sec:qa-integration}
+
+\paragraph{Objective.} Verify that the independently unit-tested components
+cooperate correctly once wired together --- that control passes correctly across
+the boundaries between router, service, repository, persistence, the in-process
+event bus, and the device adapters.
+
+\paragraph{Scope.} The wired request path driven on a fully seeded database
+through the Developer's maintenance unit (which owns the complete device package).
+The object under test is the \emph{integration logic}: the branches one component
+takes depending on another component's state.
+
+\paragraph{Approach.} \emph{Branch / decision coverage of the integrated control
+flow}. Because the team knows the internal wiring (white-box), each integration
+test is designed to drive a specific cross-component decision to both of its
+outcomes --- online vs.\ offline, in-range vs.\ out-of-range, auto-apply on vs.\
+off, conflict vs.\ none, undo-within vs.\ after the window.
+
+As the worked example, consider the integrated \emph{command-outcome} path a
+device command follows through the service, in the order the code evaluates it: it
+\textsc{times out} if the target device is offline; otherwise it is
+\textsc{rejected} if the value is out of range; otherwise, if a safety guard
+suppresses it --- a safety-critical auto power-off --- it is \textsc{skipped};
+otherwise it is applied and \textsc{succeeds}. This path crosses several
+components --- the device repository (online state), the capability validator and
+the safety guard --- so its CFG (Figure~\ref{fig:cfg-int}) is an \emph{integration}
+artefact, with three deterministic decisions and four outcomes.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+    node distance=8mm and 16mm,
+    block/.style={draw, rounded corners, align=center, font=\scriptsize,
+                  minimum width=22mm, minimum height=7mm},
+    dec/.style={draw, diamond, aspect=2, align=center, font=\scriptsize,
+                inner sep=1pt},
+    term/.style={draw, ellipse, align=center, font=\scriptsize, fill=red!8},
+    ok/.style={draw, ellipse, align=center, font=\scriptsize, fill=green!12},
+    edge/.style={-{Latex[length=2mm]}}
+]
+\node[block] (m1) {1: command\\$(d, c, v)$};
+\node[dec]   (m2) [below=of m1] {2: device\\online?};
+\node[term]  (m3) [right=of m2] {3: \textsc{timeout}};
+\node[dec]   (m4) [below=of m2] {4: value\\in range?};
+\node[term]  (m5) [right=of m4] {5: \textsc{rejected}};
+\node[dec]   (m6) [below=of m4] {6: safety\\blocked?};
+\node[term]  (m7) [right=of m6] {7: \textsc{skipped}};
+\node[ok]    (m8) [below=of m6] {8: \textsc{success}};
+
+\draw[edge] (m1) -- (m2);
+\draw[edge] (m2) -- node[above,font=\tiny]{no}  (m3);
+\draw[edge] (m2) -- node[right,font=\tiny]{yes} (m4);
+\draw[edge] (m4) -- node[above,font=\tiny]{no}  (m5);
+\draw[edge] (m4) -- node[right,font=\tiny]{yes} (m6);
+\draw[edge] (m6) -- node[above,font=\tiny]{yes} (m7);
+\draw[edge] (m6) -- node[right,font=\tiny]{no}  (m8);
+\end{tikzpicture}
+\caption{Control flow graph of the integrated device-command outcome, in code-evaluation
+order. Three decisions (device online, value in range, safety blocked) yield four
+outcomes; the graph crosses the device repository, the capability validator and the
+safety guard.}
+\label{fig:cfg-int}
+\end{figure}
+
+Table~\ref{tab:cfg-int} gives a real command for every path.
+
+\begin{table}[htbp]
+\centering
+\caption{Path coverage of the integrated command-outcome flow with real inputs.}
+\label{tab:cfg-int}
+\begin{tabularx}{\textwidth}{@{}L{0.36\textwidth} l Y@{}}
+\toprule
+\textbf{Input (command)} & \textbf{Path (nodes)} & \textbf{Expected outcome} \\
+\midrule
+offline plug, \texttt{power}$=$off & $1\rightarrow2\rightarrow3$ & \textsc{timeout} \\
+AC \texttt{target}$=99$ (out of range), online & $1\rightarrow2\rightarrow4\rightarrow5$ & \textsc{rejected} \\
+fridge (safety-critical), \texttt{power}$=$off, online & $1\rightarrow2\rightarrow4\rightarrow6\rightarrow7$ & \textsc{skipped} \\
+AC \texttt{target}$=23$, online & $1\rightarrow2\rightarrow4\rightarrow6\rightarrow8$ & \textsc{success} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+These four cases are IT-3, IT-2, IT-13 and IT-4 of Table~\ref{tab:int-cases}, which
+lists the full integration suite.
+
+\begin{table}[htbp]
+\centering
+\caption{Integration-level test cases (suites \texttt{devices\_capability},
+\texttt{rules}, \texttt{safety}); white-box branch / decision coverage. All pass.}
+\label{tab:int-cases}
+{\footnotesize
+\begin{tabularx}{\textwidth}{@{}L{0.225\textwidth} X X c L{0.085\textwidth}@{}}
+\toprule
+\textbf{Test case} & \textbf{Input} & \textbf{Expected output} & \textbf{Status} & \textbf{Technique} \\
+\midrule
+IT-1 \texttt{capability\_endpoint\_drives\_controls} & GET a device's capability & controls $=$ schema set & Pass & Stmt cov. \\
+IT-2 \texttt{command\_rejects\_out\_of\_range} & POST AC target $=99$ & 422 rejected & Pass & Branch cov. \\
+IT-3 \texttt{offline\_device\_command\_times\_out} & force device offline, POST command & outcome $=$ timeout & Pass & Decision cov. \\
+IT-4 \texttt{power\_on\_off\_control} (plug/bulb/fan/AC) & POST power \texttt{on}, then \texttt{off} & state on $\rightarrow$ off & Pass & Branch cov. \\
+IT-5 \texttt{add\_and\_delete\_mock\_device} & POST a device, then DELETE it & created (201), then gone & Pass & Path cov. \\
+IT-6 \texttt{action\_must\_match\_capability} & rule: plug brightness$=50$ & invalid (422) & Pass & Branch cov. \\
+IT-7 \texttt{auto\_action\_off\_by\_default} & create rule, no \texttt{auto\_apply} & \texttt{auto\_apply} $=$ false & Pass & Branch cov. \\
+IT-8 \texttt{conflict\_detection} & two rules, same fan, overlapping, on vs.\ off & conflict flagged & Pass & Decision cov. \\
+IT-9 \texttt{enable\_disable\_edit\_delete} & create, patch enabled/name, delete & updated, then removed & Pass & Path cov. \\
+IT-10 \texttt{time\_rules\_fire\_in\_local\_tz} & rule ``at 19:00'', clock 12:00 UTC & fires ($=$19:00 local); not at 19:00 UTC & Pass & Branch cov. \\
+IT-11 \texttt{execution\_logging\_undo\_history} & auto-rule fires, undo, delete rule & success logged; undone; history kept & Pass & Path cov. \\
+IT-12 \texttt{ac\_compressor\_rate\_limit} & two compressor commands within 3 min & second rejected & Pass & Decision cov. \\
+IT-13 \texttt{safety\_critical\_not\_auto\_off} & auto-rule powers off the fridge & skipped (NFR-SAF-2) & Pass & Decision cov. \\
+IT-14 \texttt{safety\_warnings\_on\_validation} & validate temp / safety-critical / unattended-off rule & warnings returned & Pass & Decision cov. \\
+IT-15 \texttt{safety\_critical\_not\_forced\_offline} & set the fridge offline & rejected (safety violation) & Pass & Branch cov. \\
+IT-16 \texttt{rule\_idempotent\_when\_satisfied} & auto-rule sets AC \texttt{target}$=26$ with the device already at $26$ (stored $26.0$) & no execution and no notification (engine returns \textsc{none}) & Pass & Branch cov. \\
+\bottomrule
+\end{tabularx}}
+\end{table}
+
+IT-16 and IT-11 together exercise both outcomes of the rule engine's
+\emph{idempotency} decision, which precedes command dispatch: IT-11 drives the case
+where the device is not yet in the rule's target state (the rule fires and is logged),
+while IT-16 drives the complementary case where the device already holds the target
+value (the rule is suppressed, producing no execution and no notification). The IT-16
+input is chosen with white-box knowledge that a \textsc{range} value is stored in
+normalized form (target $26$ as $26.0$), so the test guards against a
+literal-versus-normalized mismatch silently re-firing the rule.
+
+\section{System Testing (Black-box)}
+\label{sec:qa-system}
+
+\paragraph{Objective.} Validate the user-visible behaviour of the whole system
+against its functional specification, treating the server as a black box reached
+only through its public REST interface --- without reference to internal structure.
+
+\paragraph{Scope.} The fully seeded application driven end-to-end through its
+endpoints: monitoring and reporting, bill-saving, recommendations, authentication
+and role-based access control, and the Administrator's building oversight.
+
+\paragraph{Approach.} The four standard black-box test-case design techniques,
+applied per case rather than ad hoc: \emph{equivalence partitioning} (EP, one
+representative per valid/invalid input or output class --- e.g.\ the caller-role
+classes and credential classes), \emph{boundary-value analysis} (BVA, e.g.\ the
+``at most five recommendations'' cap), \emph{decision tables} (an outcome from a
+combination of conditions, e.g.\ the saving-estimate formula), and
+\emph{state-based} testing (lifecycle transitions, e.g.\ a recommendation moving
+from active to accepted or dismissed, and a unit from occupied to vacant). The
+technique used for each case is given in the last column of
+Table~\ref{tab:sys-cases}.
+
+\begin{table}[htbp]
+\centering
+\caption{System-level test cases (suites \texttt{auth\_rbac}, \texttt{admin},
+\texttt{monitoring}, \texttt{savings}, \texttt{recommendations}); black-box. All pass.}
+\label{tab:sys-cases}
+{\footnotesize
+\begin{tabularx}{\textwidth}{@{}L{0.225\textwidth} X X c L{0.06\textwidth}@{}}
+\toprule
+\textbf{Test case} & \textbf{Input} & \textbf{Expected output} & \textbf{Status} & \textbf{Technique} \\
+\midrule
+ST-1 \texttt{login\_returns\_token\_and\_user} & valid credentials & 200 + token + user & Pass & EP \\
+ST-2 \texttt{login\_rejects\_bad\_password} & wrong password & 401 & Pass & EP \\
+ST-3 \texttt{unauthenticated\_is\_rejected} & request with no token & 401 & Pass & EP \\
+ST-4 \texttt{me\_returns\_current\_user} & GET \texttt{/me} with valid token & 200, the caller & Pass & EP \\
+ST-5 \texttt{resident\_cannot\_add\_device} & Resident POST device & 403 & Pass & EP \\
+ST-6 \texttt{resident\_cannot\_create\_tariff} & Resident POST tariff & 403 & Pass & EP \\
+ST-7 \texttt{admin\_cannot\_control\_device} & Administrator POST command & 403 & Pass & EP \\
+ST-8 \texttt{admin\_cannot\_add\_device} & Administrator POST device & 403 & Pass & EP \\
+ST-9 \texttt{resident\_cannot\_access\_overview} & Resident GET building overview & 403 & Pass & EP \\
+ST-10 \texttt{resident\_cannot\_offboard} & Resident DELETE resident & 403 & Pass & EP \\
+ST-11 \texttt{admin\_building\_overview} & Administrator GET overview & per-unit aggregates & Pass & EP \\
+ST-12 \texttt{admin\_can\_drill\_into\_a\_unit} & Administrator GET a unit & that unit's detail & Pass & EP \\
+ST-13 \texttt{admin\_has\_no\_unit} & Administrator GET \texttt{/me} & \texttt{home\_id} $=$ null & Pass & EP \\
+ST-14 \texttt{admin\_can\_onboard\_resident} & Administrator onboards a vacant unit & created; resident scoped to own unit & Pass & State \\
+ST-15 \texttt{admin\_offboard\_is\_soft} & Administrator DELETE resident & 204; cannot re-authenticate; unit vacant & Pass & State \\
+ST-16 \texttt{offboard\_vacant\_is\_conflict} & offboard an already-vacant unit & 409 conflict & Pass & State \\
+ST-17 \texttt{dashboard\_reports\_metrics} & GET dashboard & live power + kWh + bill present & Pass & EP \\
+ST-18 \texttt{top\_consumers\_ranked} & GET top consumers & descending by energy & Pass & EP \\
+ST-19 \texttt{consumption\_series\_buckets} & GET series, granularity hour & series bucketed by hour & Pass & EP \\
+ST-20 \texttt{consumption\_rejects\_foreign} & Resident GET another unit's device & denied (NFR-SEC-4) & Pass & EP \\
+ST-21 \texttt{csv\_export} & GET CSV export & well-formed CSV & Pass & EP \\
+ST-22 \texttt{estimate\_uses\_srs\_formula} & estimate a rule before saving & equals SRS formula; baseline $>0$ & Pass & Decision \\
+ST-23 \texttt{raising\_ac\_target\_saves} & rule raising the AC target & positive saving & Pass & EP \\
+ST-24 \texttt{savings\_summary\_reports\_cycle} & GET savings summary & current billing-cycle savings & Pass & EP \\
+ST-25 \texttt{savings\_records\_present} & GET savings records & records exist & Pass & EP \\
+ST-26 \texttt{drift\_check\_is\_reachable} & run the drift check & drift flag returned & Pass & EP \\
+ST-27 \texttt{recommendations\_readable} & analyse, then GET recommendations & WHEN/THEN + rationale + window & Pass & EP \\
+ST-28 \texttt{recommendations\_ranked\_capped} & analyse usage & sorted by VND, at most five & Pass & BVA \\
+ST-29 \texttt{new\_device\_yields\_no\_rec} & add a fresh device, analyse & none for it ($<7$ days data) & Pass & EP \\
+ST-30 \texttt{recommendation\_provider\_swappable} & inject a fake provider & default Heuristic; injected one consulted & Pass & Seam \\
+ST-31 \texttt{accept\_becomes\_rule} & POST accept a recommendation & 201 rule; no longer active & Pass & State \\
+ST-32 \texttt{dismiss\_suppresses} & POST dismiss, then re-analyse & suppressed (not re-shown) & Pass & State \\
+\bottomrule
+\end{tabularx}}
+\end{table}
 
 \section{Results and Traceability}
 \label{sec:qa-results}
 
-The full suite passes: \textbf{65 tests, 65 passed}. Because tests are derived
-from the specification, every requirement family is traceable to at least one
-executable check, and conversely every test traces back to a requirement.
-Table~\ref{tab:trace} summarises the mapping from requirement families to
-representative covering tests.
+The full suite passes: \textbf{67 tests, 67 passed}, as recorded in the
+\emph{Status} column of every table above. Because tests are derived from the
+specification, every requirement family is traceable to at least one executable
+check, and conversely every test traces back to a requirement.
+\emph{Acceptance testing} re-runs this same system suite against the demonstration
+seed in front of the customer: the green system suite \emph{is} the evidence that
+the acceptance focus items hold. Table~\ref{tab:trace} summarises the mapping from
+requirement families to representative covering tests.
 
 \begin{table}[htbp]
 \centering
@@ -376,41 +456,37 @@ representative covering tests.
 \textbf{Requirement family} & \textbf{Concern} & \textbf{Behaviour verified} \\
 \midrule
 REQ-4.1 & Monitoring (live power, cumulative energy, offline detection) &
-  that the home dashboard reports the expected metrics, and that a command to an
-  offline device times out \\
+  ST-17 dashboard metrics; IT-3 command to an offline device times out \\
 REQ-4.2 & Device control via capability schema (load, validate, command) &
-  that the capability schema drives the available controls, and that an
-  out-of-range command is rejected \\
+  IT-1 the schema drives the controls; IT-2 an out-of-range command is rejected \\
 REQ-4.3 & Rules, conflict detection, auto-action opt-in and undo &
-  that conflicting rules are detected, and that automatic actions are disabled
-  by default \\
+  IT-8 conflicting rules detected; IT-7 automatic actions off by default \\
 REQ-4.4 & Recommendation generation, ranking and approval &
-  that an accepted recommendation becomes a rule, and that recommendations are
-  ranked and capped \\
+  ST-31 an accepted recommendation becomes a rule; ST-28 ranked and capped \\
 REQ-4.5 & Bill-saving estimation and cycle reporting &
-  that the saving estimate follows the specified formula, and that the savings
-  summary reports the billing cycle \\
+  ST-22 estimate follows the formula; ST-24 summary reports the cycle \\
 NFR-SAF & Compressor rate limit, safety-critical protection, warnings &
-  the compressor rate-limit test, and the safety-critical auto-power-off
-  suppression test \\
+  IT-12 compressor rate limit; IT-13 safety-critical auto-power-off suppression \\
 NFR-SEC & Authentication, RBAC, no plaintext secrets &
-  that an unauthenticated request is rejected, and that a password survives a
-  hash round-trip without ever being stored in plaintext \\
+  ST-3 unauthenticated request rejected; UT-10 password hash round-trip \\
 \bottomrule
 \end{tabularx}
 \end{table}
 
-Both styles of testing are present and traceable: pure-logic unit tests pin the
-algorithms (validation, pricing, the simulator energy differential), while seeded
-in-process tests driven through the public interface prove the wired system
-behaves correctly. Negative and boundary paths are first-class throughout: rejected,
+Both styles of testing are present and traceable: white-box unit and integration
+tests pin the algorithms and the integrated control flow, while black-box system
+tests driven through the public interface prove the wired system behaves
+correctly. Negative and boundary paths are first-class throughout: rejected,
 timeout and skipped command outcomes, out-of-range and unsupported controls, bad
 passwords, unauthenticated access and forbidden cross-role actions are all
-explicitly exercised. The principal residual gaps --- direct assertion of
-notification delivery, frontend rendering, and non-functional load and transport
-security --- are documented as known limitations to be closed with a notification
-endpoint test, manual UI acceptance, and a dedicated load and TLS harness
-respectively.
+explicitly exercised. One boundary is asserted only on its inner side: ST-28
+confirms the recommendation list never exceeds the cap of five, but the
+demonstration seed yields fewer than five candidates, so the exact transition (a
+sixth recommendation being trimmed) is not forced. The principal residual gaps ---
+that boundary, plus direct assertion of notification delivery, frontend rendering,
+and non-functional load and transport security --- are documented as known
+limitations to be closed with a six-candidate cap test, a notification endpoint
+test, manual UI acceptance, and a dedicated load and TLS harness respectively.
 
 \section{Maintenance}
 \label{sec:qa-maintenance}
@@ -423,18 +499,18 @@ regression suite before release:
 \begin{itemize}[leftmargin=1.4em]
   \item \textbf{Corrective} --- repairing a latent fault. For example, fixing an
         off-by-one error should the air-conditioner target guard ever admit $31$;
-        the corresponding boundary test in Table~\ref{tab:bva} would reproduce
-        and then guard the fix.
+        the boundary case UT-1 in Table~\ref{tab:unit-cases} would reproduce and
+        then guard the fix.
   \item \textbf{Adaptive} --- accommodating a changed environment. For example,
         updating the tariff math when the electricity utility revises its tiered
-        price schedule, re-validated by the tariff-pricing unit tests.
+        price schedule, re-validated by the tariff-pricing unit tests (UT-5, UT-6).
   \item \textbf{Perfective} --- improving function or quality without changing
         external behaviour. For example, adding a new device type (a water
         heater) by declaring one capability schema entry and one adapter, then
         extending the capability and command tests to cover it.
   \item \textbf{Preventive} --- restructuring to forestall future defects. For
         example, hardening the rate-limiter against clock skew before any failure
-        is observed, protected by the existing rate-limit regression test.
+        is observed, protected by the existing rate-limit regression test (IT-12).
 \end{itemize}
 
 This classification realises the Support phase of the life-cycle introduced in

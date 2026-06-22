@@ -48,7 +48,6 @@ export async function downloadCsv(kind, filename) {
 export const api = {
   // auth
   login: (email, password) => post("/auth/login", { email, password }),
-  register: (body) => post("/auth/register", body),
   me: () => get("/auth/me"),
   addResident: (body) => post("/auth/residents", body),
 

@@ -106,7 +106,7 @@ C4 & Frontend source
    & The client application root, its page and component modules, and its authentication and supporting library code
    & Frontend developers \\[4pt]
 C5 & Test suite
-   & The shared test fixtures and the nine automated test modules comprising sixty-five cases
+   & The shared test fixtures and the nine automated test modules comprising sixty-seven cases
    & QA lead \\[4pt]
 C6 & Build \& dependency manifests
    & The backend and client dependency and build manifests, with all versions pinned
@@ -171,7 +171,7 @@ Table~\ref{tab:baselines} summarises the four project baselines.
 M1 --- Requirements
   & M1
   & C1 (the requirements specification v1.0 and its refinement note), the initial documentation scaffold, and the repository with its ignore manifest
-  & Requirements specification approved by instructor; all requirement identifiers stable \\[6pt]
+  & Requirements specification approved; all requirement identifiers stable \\[6pt]
 M2 --- Design \& skeleton
   & M2
   & C2 (the architectural and structural design documents); the backend module skeleton; C6 with pinned dependencies; C7 with all policy thresholds declared
@@ -179,7 +179,7 @@ M2 --- Design \& skeleton
 M3 --- Implementation
   & M3
   & C3 (the complete backend services), C4 (all client pages and components), C5 (the full test suite), C7 (all thresholds wired)
-  & All sixty-five automated tests pass; the demonstration seeds twenty-one days of data and the application runs end-to-end \\[6pt]
+  & All sixty-seven automated tests pass; the demonstration seeds twenty-one days of data and the application runs end-to-end \\[6pt]
 M4 --- Release / submission
   & M4
   & The entire project: C1--C7 consistent end-to-end; the traceability matrix complete; this configuration management plan
@@ -213,13 +213,13 @@ marker captures every CI at once. No CI is managed outside the repository.
 
 \subsection{Branch Model}
 
-A trunk-plus-feature model is adopted, suited to a small, collocated course team
+A trunk-plus-feature model is adopted, suited to a small, collocated team
 where the integration branch must remain continuously releasable.
 
 \begin{description}[leftmargin=1.6cm, style=nextline]
   \item[Integration line]
     The sole long-lived line of development. It must always be buildable and pass
-    the full suite of sixty-five automated tests. Changes are never applied to it
+    the full suite of sixty-seven automated tests. Changes are never applied to it
     directly; they arrive exclusively through reviewed merge proposals.
   \item[Feature branch]
     A short-lived line of work that diverges from the integration line for each
@@ -309,7 +309,7 @@ same change that establishes a new baseline.
 
 Any modification to a baselined CI --- whether it addresses a new requirement, a
 discovered defect, an adjustment to a policy threshold, or a document revision ---
-must pass through a three-stage change-control process. For a course-sized team this
+must pass through a three-stage change-control process. For a small team this
 process is intentionally lightweight, but the evaluation and review gates are real
 and enforced.
 
@@ -332,7 +332,7 @@ verifying correctness, adherence to the three-tier layered architecture, and tha
 every change is traceable to an approved requirement. Self-merges are not permitted.
 
 \textbf{Stage~3: Test Gate, Merge, and Release.}
-The full automated test suite of sixty-five cases must pass on the branch before
+The full automated test suite of sixty-seven cases must pass on the branch before
 merge. This is the non-negotiable merge gate. On passing, the branch is merged into
 the integration line and then discarded. If the merged change completes a milestone,
 the configuration manager establishes the corresponding annotated baseline marker

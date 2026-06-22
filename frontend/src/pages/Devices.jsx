@@ -150,6 +150,9 @@ function DeviceCard({ device, canManage, onControl, onToggle, onDelete }) {
 
   // Sensors show temperature + occupancy; everything else shows live wattage.
   const occupied = d.state && d.state.occupancy;
+  // Power switch state (on/off) is distinct from connectivity (online/offline):
+  // a switchable device can be reachable yet powered off.
+  const isOn = d.state && d.state.power === "on";
   const headline = isSensor
     ? (d.state && d.state.temperature != null ? `${Number(d.state.temperature).toFixed(1)}°C` : "—")
     : watts(powerOf(d));
@@ -191,6 +194,7 @@ function DeviceCard({ device, canManage, onControl, onToggle, onDelete }) {
       )}
 
       <div className="row" style={{ gap: 6, marginTop: 10, flexWrap: "wrap" }}>
+        {!isSensor && <Pill kind={isOn ? "green" : "gray"}>{isOn ? "on" : "off"}</Pill>}
         {d.safety_critical && <Pill kind="orange">safety-critical</Pill>}
         {d.is_mock && <Pill kind="blue">mock</Pill>}
       </div>

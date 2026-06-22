@@ -1,8 +1,8 @@
 \chapter{Requirements Engineering}
 
 This chapter establishes \emph{what} the AI-Driven Smart Home Energy Optimizer
-(SHEO) must do, deliberately kept separate from \emph{how} it is built. Following
-the discipline taught in Lecture C06 (Requirement Analysis), it first walks through
+(SHEO) must do, deliberately kept separate from \emph{how} it is built. Applying
+established requirements-analysis discipline, it first walks through
 the requirements engineering process, then reconstructs the client elicitation
 session from which the requirements were drawn, and finally records the catalogue of
 functional and non-functional requirements, the use-case model, the use-case
@@ -10,16 +10,16 @@ specifications, and the behavioural and data models. The artefacts produced here
 the agreed basis against which the system is later designed, constructed, and
 acceptance-tested.
 
-\section{The Requirements Engineering Process (C06)}
+\section{The Requirements Engineering Process}
 \label{sec:req-process}
 
-Lecture C06 frames requirements engineering as a five-step pipeline whose output is a
+Requirements engineering proceeds as a five-step pipeline whose output is a
 Software Requirements Specification (SRS)~\cite{ieee29148}. SHEO followed this pipeline faithfully:
 
 \begin{enumerate}
   \item \textbf{Feasibility study.} Before committing, the team checked that the
-  product was technically, operationally, and economically achievable within a single
-  course timeline. The decisive constraint --- no physical Internet-of-Things (IoT)
+  product was technically, operationally, and economically achievable within the
+  project timeline. The decisive constraint --- no physical Internet-of-Things (IoT)
   hardware --- was resolved by deciding to substitute a deterministic mock device
   simulator, which keeps the whole product demonstrable end-to-end while remaining
   hardware-ready. The conclusion was that a small, fully working system was feasible
@@ -29,16 +29,16 @@ Software Requirements Specification (SRS)~\cite{ieee29148}. SHEO followed this p
   The principal elicitation techniques applied were the \emph{structured interview}
   (asking the client to describe the devices, the desired controls, and the business
   priority) and \emph{observation / scenario walk-through} (reasoning about how a
-  resident would inspect consumption, control a device, and act on a suggestion). The
-  course's own client-discussion practice --- in which each group posed sharp scoping
-  questions to the instructor acting as client --- supplied the model for this step.
+  resident would inspect consumption, control a device, and act on a suggestion). A
+  structured client-discussion approach --- posing sharp scoping questions to the
+  client --- supplied the model for this step.
   \item \textbf{Analysis.} The raw notes were decoded, ambiguities were surfaced, and
   conflicts and gaps were negotiated into testable statements. For example, the
   client's loose phrase ``find habit and apply that rule'' was analysed into two
   separable obligations: \emph{mine} a habit and \emph{recommend} a rule, with the
   user retaining explicit control over whether it is ever applied.
-  \item \textbf{Modelling.} The analysed requirements were captured in the standard
-  C06 models: a use-case diagram and use-case specification tables for the functional
+  \item \textbf{Modelling.} The analysed requirements were captured in standard
+  models: a use-case diagram and use-case specification tables for the functional
   view (Sections~\ref{sec:usecase}--\ref{sec:uc-spec}), and an
   entity-relationship diagram together with finite-state machines for the data and
   behavioural views (Section~\ref{sec:models}).
@@ -46,13 +46,13 @@ Software Requirements Specification (SRS)~\cite{ieee29148}. SHEO followed this p
   structured catalogue of functional requirements (\req{REQ-4.x}, \req{REQ-6.1}),
   non-functional requirements (\req{NFR-*}), and business rules (\req{BR-1}--\req{BR-5}),
   each given a unique identifier so that it can be traced forward into design, code,
-  and test. C06's quality criteria for an SRS --- that it be \emph{clear, accurate,
+  and test. Standard SRS quality criteria --- that it be \emph{clear, accurate,
   relevant,} and \emph{complete} --- guided this write-up, and the requirement
   identifiers used throughout this chapter are exactly those carried into the
   traceability matrix.
 \end{enumerate}
 
-A central rule from C01 and C06 underpins the entire chapter: requirements
+A central rule underpins the entire chapter: requirements
 (``what'') are kept strictly separate from design (``how''). The statements below
 describe the system's externally observable obligations; the architecture and source
 modules that satisfy them are the subject of later chapters.
@@ -63,14 +63,14 @@ modules that satisfy them are the subject of later chapters.
 The requirements originate in an offline discussion with the project's client, an
 IoT contractor. Reconstructed and decoded, the session ran as follows.
 
-\textbf{Who the client is.} Per the C01 stakeholder taxonomy, the client is the party
+\textbf{Who the client is.} The client is the party
 that \emph{commissions and funds} the build. Here that is an IoT contractor who
 manufactures a range of AI capabilities and a range of IoT devices, and who hires the
 team to deliver an application on top of them. Crucially, the contractor is a
 \emph{business stakeholder, not a system actor}: it pays for and supplies the system
 but does not operate the running software day to day. The parties who do operate it ---
 the building management (the \emph{customer}) and the residents (the \emph{end-users})
---- are distinguished from the client throughout, exactly as C01 requires.
+--- are distinguished from the client throughout.
 
 \textbf{What the client asked for.} The contractor ``has all kinds of IoT devices''
 and ``wants to provide an application.'' Each device type exposes its own controls:
@@ -99,12 +99,9 @@ Vietnamese đồng (VND), and shown \emph{before} the rule is accepted. The esti
 must therefore be transparent and explainable rather than a black box --- a constraint
 that shapes the whole optimization design.
 
-\textbf{Relation to the course's client-Q\&A norm.} The course runs a recurring
-practice in which each group, having received a terse client brief, must return to the
-client with sharp questions that pin down scope, roles, and edge cases before
-designing anything --- for instance, questions on who may publish a public ticket, how
-delivery is handled, or whether an offline mode is required. SHEO's elicitation
-mirrors this norm. The team's clarifying questions resolved exactly the points the
+\textbf{Clarifying questions.} Having received a terse client brief, the team returned
+to the client with sharp questions that pinned down scope, roles, and edge cases before
+designing anything. These clarifying questions resolved exactly the points the
 client's notes left open: \emph{scope} (mock devices instead of real hardware, an
 explainable rule engine instead of opaque machine learning), \emph{roles} (which party
 is client, customer, and end-user, and which of these becomes a login actor), and
@@ -184,7 +181,7 @@ estimate must be visible at decision time, not merely after the fact.
 \section{Non-Functional Requirements and Business Rules}
 \label{sec:nfr}
 
-Following C06, non-functional requirements are classified as \emph{product},
+Non-functional requirements are classified as \emph{product},
 \emph{organisational}, or \emph{external} requirements. SHEO's product NFRs cover
 performance (\req{NFR-PER}), safety (\req{NFR-SAF}), and security (\req{NFR-SEC}); the
 external requirements are the deployment-level transport-security obligations; and the
@@ -194,7 +191,7 @@ record them.
 
 \begin{table}[htbp]
 \centering
-\caption{Non-functional requirements, classified per C06 (product / external).}
+\caption{Non-functional requirements (product / external).}
 \label{tab:nfr}
 \small
 \begin{tabularx}{\linewidth}{@{}l l Y c@{}}
@@ -243,8 +240,8 @@ never in a way that could compromise a safety-critical device.
 \label{sec:usecase}
 
 The functional requirements above are organised into a use-case model that views the
-system as a single black box used by a small set of external actors. In keeping with
-the C06 convention, each actor is named with a \emph{singular role noun} (not an
+system as a single black box used by a small set of external actors. By convention,
+each actor is named with a \emph{singular role noun} (not an
 individual or a job title), and each use case is named \emph{verb + noun}.
 
 \fig{fig04-use-case.png}{Use-case model. The deployment models one apartment building. The Administrator (building owner) monitors a building overview across every unit, configures the building-wide tariff, and onboards or offboards residents by selling a unit or returning it to vacant --- but never manually operates a unit's devices and authors no automation rules; the Resident operates only their own unit's devices and may author rules and accept recommendations for that unit; the Developer/Tester exercises mock devices on a maintenance unit; the System Scheduler autonomously fires rules and mines habits. The Client (IoT contractor) and Customer (building management) are business stakeholders outside the boundary --- the Customer operates the system \emph{as} the Administrator. Accepting a recommendation $\langle\langle$include$\rangle\rangle$ authoring a rule, which in turn $\langle\langle$include$\rangle\rangle$ command validation and a VND estimate.}{fig:usecase}
@@ -272,15 +269,15 @@ The model has four actors:
 The model uses the $\langle\langle$include$\rangle\rangle$ relationship for mandatory
 sub-behaviour: \emph{Review \& accept recommendation} includes \emph{Author automation
 rule} (an accepted recommendation becomes a rule), which itself includes the common
-command-validation and VND-estimation steps. As C01 requires, the Client and Customer
+command-validation and VND-estimation steps. The Client and Customer
 are drawn \emph{outside} the system boundary as business stakeholders, since neither
 the funding contractor nor the adopting management is itself a login actor --- the
 customer interacts with the running system only in its Administrator role.
 
-\section{Use-Case Specifications (C06)}
+\section{Use-Case Specifications}
 \label{sec:uc-spec}
 
-C06 requires that the principal use cases be detailed in specification tables giving
+The principal use cases are detailed in specification tables giving
 preconditions, the main flow, alternate and error-handling flows, and postconditions.
 Three core use cases are specified below: controlling a device (UC-02), reviewing and
 accepting a recommendation (UC-05), and authoring an automation rule (UC-04).

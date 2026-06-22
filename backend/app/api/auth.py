@@ -8,7 +8,6 @@ from ..database import get_db
 from ..domain.models import User
 from ..schemas.auth import (
     LoginRequest,
-    RegisterRequest,
     ResidentCreate,
     TokenResponse,
     UserOut,
@@ -18,12 +17,11 @@ from .deps import get_current_user, require_admin
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
-
-@router.post("/register", response_model=TokenResponse, status_code=201)
-def register(body: RegisterRequest, db: Session = Depends(get_db)) -> TokenResponse:
-    svc = AuthService(db)
-    user = svc.register_admin(body.email, body.full_name, body.password, body.building_name)
-    return TokenResponse(access_token=svc.issue_token(user), user=UserOut.model_validate(user))
+# Note: there is deliberately no public self-registration endpoint. The single
+# Administrator (building owner) is provisioned out-of-band (the deployment seed),
+# and Residents are onboarded only by the Administrator via POST /auth/residents
+# (Business Rule BR-1, NFR-SEC-2). A public /register would let any caller create an
+# Administrator and, since the building is a single tenant, read every unit's data.
 
 
 @router.post("/login", response_model=TokenResponse)

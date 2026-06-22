@@ -93,11 +93,13 @@ export default function Reports() {
   }));
   const peak = chart.reduce((m, c) => Math.max(m, c.kwh), 0);
 
-  // Savings record rollups (measured vs estimate).
+  // Savings record rollups. Measured saving is a ledger of actual accrued savings;
+  // the estimate is a forward-looking property of the enabled rules, so it comes from
+  // the savings summary (sum of the enabled rules' monthly estimates), not from a
+  // ledger record -- the backend never writes an "estimate" SavingsRecord.
   const measured = records.filter((r) => r.kind === "measured");
-  const estimates = records.filter((r) => r.kind === "estimate");
   const measuredSaved = measured.reduce((s, r) => s + (r.saved_vnd || 0), 0);
-  const estimateSaved = estimates.reduce((s, r) => s + (r.saved_vnd || 0), 0);
+  const estimateSaved = summary?.estimated_saved_vnd_month || 0;
   const totalSaved = records.reduce((s, r) => s + (r.saved_vnd || 0), 0);
   const recentRecords = [...records]
     .sort((a, b) => new Date(b.period_end) - new Date(a.period_end))
@@ -246,7 +248,7 @@ export default function Reports() {
                   <div className="tabular" style={{ fontSize: 20, fontWeight: 800, color: OKABE_ITO.orange }}>
                     {vndShort(estimateSaved)}
                   </div>
-                  <div className="muted" style={{ fontSize: 12 }}>{estimates.length} records</div>
+                  <div className="muted" style={{ fontSize: 12 }}>forecast / month</div>
                 </div>
               </div>
 

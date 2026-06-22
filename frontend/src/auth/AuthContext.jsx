@@ -30,19 +30,13 @@ export function AuthProvider({ children }) {
     setUser(res.user);
     return res.user;
   };
-  const register = async (body) => {
-    const res = await api.register(body);
-    setToken(res.access_token);
-    setUser(res.user);
-    return res.user;
-  };
   const logout = () => {
     setToken(null);
     setUser(null);
   };
 
   return (
-    <AuthCtx.Provider value={{ user, loading, login, register, logout, toast }}>
+    <AuthCtx.Provider value={{ user, loading, login, logout, toast }}>
       {children}
       <div className="toasts">
         {toasts.map((t) => (

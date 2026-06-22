@@ -218,13 +218,21 @@ class OptimizationService:
             return False
         measured = sum(r.saved_vnd for r in records)
         estimate = rule.estimated_monthly_saving_vnd
-        # Compare like-for-like periods (REQ-4.5.5): the estimate is a whole-month
-        # figure, but ``measured`` has accrued only over the elapsed part of the
-        # cycle. Pro-rate the estimate to the elapsed fraction before measuring drift,
-        # otherwise a perfectly on-target rule reads as drifting for most of the cycle.
+        # Compare like-for-like periods (REQ-4.5.5). The estimate is a whole-month
+        # figure, but ``measured`` only accrues while the rule actually exists, so the
+        # observation window must start at the later of the cycle start and the rule's
+        # creation -- otherwise a rule created mid-cycle is compared against a full
+        # month of expected saving and reads as drifting from the moment it is made.
         total_days = days_in_cycle(cycle_start, cycle_end)
-        elapsed_days = max(0.0, days_in_cycle(cycle_start, now()))
-        expected_so_far = estimate * (elapsed_days / total_days) if total_days > 0 else 0.0
+        observation_start = max(cycle_start, rule.created_at)
+        observed_days = max(0.0, days_in_cycle(observation_start, now()))
+        # A brand-new rule has not had time to save yet; don't flag drift until it has
+        # been observed long enough for the measured sample to be meaningful.
+        if observed_days < settings.savings_drift_min_days:
+            rule.needs_recalculation = False
+            self.db.commit()
+            return False
+        expected_so_far = estimate * (observed_days / total_days) if total_days > 0 else 0.0
         if expected_so_far <= 0:
             return False
         drift = abs(measured - expected_so_far) / expected_so_far

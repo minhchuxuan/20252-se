@@ -3,6 +3,17 @@ from __future__ import annotations
 
 from calendar import monthrange
 from datetime import datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
+
+
+def to_local(ts: datetime) -> datetime:
+    """Convert a UTC timestamp to the configured local zone for *evaluating*
+    user-facing schedules (rule time/day conditions, tariff windows). Storage stays
+    UTC; this only fixes the interpretation of wall-clock times like "19:00", which
+    a user means in their own timezone, not UTC."""
+    from ..config import settings
+
+    return ts.astimezone(ZoneInfo(settings.timezone))
 
 
 def start_of_day(ts: datetime) -> datetime:

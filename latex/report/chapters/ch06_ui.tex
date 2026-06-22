@@ -1,7 +1,7 @@
 \chapter{User Interface Design}
 
-This chapter describes the user interface design of SHEO, following the five-step
-process taught in C07 Part 2: identify the \emph{context of use} $\rightarrow$ derive
+This chapter describes the user interface design of SHEO, following a standard
+user-centred design process: identify the \emph{context of use} $\rightarrow$ derive
 \emph{UI requirements} $\rightarrow$ produce a \emph{design} (information architecture
 and screen layouts) $\rightarrow$ build a \emph{prototype} $\rightarrow$ conduct
 \emph{usability evaluation}. Each section below corresponds to one step and maps its
@@ -11,8 +11,7 @@ findings to the system's screens, navigation structures, and interaction pattern
 \section{UI Design Process}
 \label{sec:ui-process}
 
-The interface design process followed in SHEO is the five-step model from the C07
-curriculum:
+The interface design process followed in SHEO is a five-step user-centred model:
 
 \begin{enumerate}
   \item \textbf{Identify context of use.}  Record who the users are, what environment
@@ -51,9 +50,9 @@ handled during a typical session includes live device power and energy figures, 
 and measured savings in Vietnamese dong (VND), automation rules, AI-derived
 recommendations, and the building-wide electricity tariff.
 
-Following the C01 stakeholder distinction, the project separates \emph{business
+The project separates \emph{business
 stakeholders} who commission and fund the build from \emph{system actors} who operate
-the running software.  The Client (IoT contractor) falls in the first category and does
+the running software (consistent with the stakeholder model of Chapter~1).  The Client (IoT contractor) falls in the first category and does
 not log in.  The Customer (building owner or landlord) operates SHEO as the
 Administrator actor, who owns no unit of their own; the tenants of the individual units
 operate it as Resident actors.
@@ -105,7 +104,7 @@ Section~\ref{sec:ui-requirements}.
 
 \subsection{The seven golden rules applied to SHEO}
 
-The C07 UI curriculum specifies seven golden rules of interface design.
+Seven widely-cited golden rules of interface design guide the evaluation.
 Table~\ref{tab:golden-rules} lists each rule and its concrete realisation in SHEO.
 
 \begin{longtable}{@{} L{3.0cm} p{9.2cm} @{}}
@@ -290,6 +289,41 @@ no new UI code.
 
 \figw{fig09f-settings.png}{0.9}{Settings screen.  The building-wide tariff configuration (flat, tiered EVN, or time-of-use; amounts in VND) and the unit-onboarding panel are editable only by the Administrator; non-Administrators see this screen in a read-only state (\req{BR-1}, \req{BR-5}, \req{NFR-SEC-4}).}{fig:settings}
 
+\medskip
+The wireframes above are deliberately \emph{low-fidelity} and monochrome: they fix
+layout and information hierarchy before any visual styling is chosen.
+Figure~\ref{fig:hifi} shows the corresponding \emph{high-fidelity} screens as actually
+implemented --- in colour, on live seeded data --- completing the low- to
+high-fidelity progression and evidencing that the design was carried through to a
+working product.
+
+\begin{figure}[htbp]
+\centering
+\begin{subfigure}{0.49\linewidth}\centering
+  \includegraphics[width=\linewidth]{shot-dashboard.png}
+  \caption{Dashboard}\label{fig:hifi-dash}
+\end{subfigure}\hfill
+\begin{subfigure}{0.49\linewidth}\centering
+  \includegraphics[width=\linewidth]{shot-devices.png}
+  \caption{Devices}\label{fig:hifi-devices}
+\end{subfigure}
+
+\medskip
+\begin{subfigure}{0.49\linewidth}\centering
+  \includegraphics[width=\linewidth]{shot-rules.png}
+  \caption{Rules \& automation}\label{fig:hifi-rules}
+\end{subfigure}\hfill
+\begin{subfigure}{0.49\linewidth}\centering
+  \includegraphics[width=\linewidth]{shot-recommendations.png}
+  \caption{Recommendations}\label{fig:hifi-recs}
+\end{subfigure}
+\caption{High-fidelity realisation of four principal screens, captured from the running
+application on seeded data. These implement the low-fidelity wireframes of
+Figures~\ref{fig:dash}, \ref{fig:devices}, \ref{fig:rules} and~\ref{fig:recs}
+respectively (\req{REQ-4.1}, \req{REQ-4.3}, \req{REQ-4.4}, \req{REQ-4.5}).}
+\label{fig:hifi}
+\end{figure}
+
 % -----------------------------------------------------------------------
 \section{Usability Evaluation}
 \label{sec:ui-evaluation}
@@ -314,8 +348,8 @@ implementation milestone:
         below the Save button, making it easy to miss.  The corrected design disables
         the Save button until the estimate has been fetched and displayed, forcing the
         user to see the figure before committing.
-  \item \textbf{Safety visibility.}  Safety-sensitive controls (such as the AC compressor
-        toggle) were initially indistinguishable from ordinary controls.  The corrected
+  \item \textbf{Safety visibility.}  Safety-sensitive controls (such as the AC
+        target-temperature control) were initially indistinguishable from ordinary controls.  The corrected
         design adds a prominent \emph{safety} warning pill adjacent to any control that
         the capability schema identifies as safety-sensitive (\req{NFR-SAF-3}).
 \end{enumerate}

@@ -12,10 +12,11 @@ from app.domain.enums import DeviceType, TariffType
 from app.core.timeutil import current_billing_cycle, hour_set_from_window
 
 
-# --- REQ-4.2.3 command validation: boundary-value analysis on AC target 16..30 ---
+# --- REQ-4.2.3 command validation: boundary-value analysis (15/16, 30/31) plus the
+# non-numeric path together cover every branch of the AC target guard (16..30). ---
 @pytest.mark.parametrize(
     "value,ok",
-    [(16, True), (30, True), (23, True), (15, False), (31, False), (-5, False)],
+    [(16, True), (30, True), (23, True), (15, False), (31, False), ("hot", False)],
 )
 def test_ac_target_boundaries(value, ok):
     assert validate_command(DeviceType.AC, "target", value).ok is ok
@@ -62,14 +63,23 @@ def test_tiered_tariff_is_progressive():
 
 
 def test_billing_cycle_contains_now():
+    # Branch coverage of the cycle-start decision (ts >= this_month_start?).
+    # True branch: the timestamp is on/after the billing day -> cycle starts this month.
     ts = datetime(2026, 6, 15, 8, tzinfo=timezone.utc)
     start, end = current_billing_cycle(ts, billing_day=1)
     assert start <= ts < end
     assert start.day == 1 and end.month == 7
+    # False branch: the timestamp is before the billing day -> cycle started last month.
+    start2, end2 = current_billing_cycle(datetime(2026, 6, 3, tzinfo=timezone.utc), billing_day=15)
+    assert start2.month == 5 and start2.day == 15
+    assert end2.month == 6 and end2.day == 15
 
 
 def test_hour_set_wraps_midnight():
-    assert hour_set_from_window("22:00", "04:00") == {22, 23, 0, 1, 2, 3}
+    # Branch coverage of the window function's three branches.
+    assert hour_set_from_window("22:00", "04:00") == {22, 23, 0, 1, 2, 3}  # wraps midnight
+    assert hour_set_from_window("08:00", "12:00") == {8, 9, 10, 11}        # same-day window
+    assert hour_set_from_window("00:00", "00:00") == set(range(24))        # empty == full day
 
 
 # --- simulator: AC consumes more at a lower target (drives "AC too cold") ---

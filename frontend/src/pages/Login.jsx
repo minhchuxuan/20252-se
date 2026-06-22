@@ -3,9 +3,8 @@ import { useAuth } from "../auth/AuthContext";
 import { Icon } from "../components/icons";
 
 export default function Login() {
-  const { login, register, toast } = useAuth();
-  const [mode, setMode] = useState("login");
-  const [form, setForm] = useState({ email: "admin@demo.com", password: "demo1234", full_name: "", home_name: "My Home" });
+  const { login, toast } = useAuth();
+  const [form, setForm] = useState({ email: "admin@demo.com", password: "demo1234" });
   const [busy, setBusy] = useState(false);
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
 
@@ -13,8 +12,7 @@ export default function Login() {
     e.preventDefault();
     setBusy(true);
     try {
-      if (mode === "login") await login(form.email, form.password);
-      else await register({ email: form.email, password: form.password, full_name: form.full_name, home_name: form.home_name });
+      await login(form.email, form.password);
     } catch (err) {
       toast(err.message, "err");
     } finally {
@@ -32,15 +30,9 @@ export default function Login() {
           </div>
         </div>
         <p className="muted" style={{ fontSize: 13.5, marginTop: 0 }}>
-          {mode === "login" ? "Sign in to monitor and optimise your home energy." : "Create an administrator account for a new building."}
+          Sign in to monitor and optimise your home energy.
         </p>
 
-        {mode === "register" && (
-          <div className="form-row">
-            <label className="field">Full name</label>
-            <input value={form.full_name} onChange={set("full_name")} required placeholder="Your name" />
-          </div>
-        )}
         <div className="form-row">
           <label className="field">Email</label>
           <input type="email" value={form.email} onChange={set("email")} required />
@@ -49,31 +41,15 @@ export default function Login() {
           <label className="field">Password</label>
           <input type="password" value={form.password} onChange={set("password")} required minLength={6} />
         </div>
-        {mode === "register" && (
-          <div className="form-row">
-            <label className="field">Home name</label>
-            <input value={form.home_name} onChange={set("home_name")} />
-          </div>
-        )}
 
         <button className="btn btn-primary" style={{ width: "100%", justifyContent: "center" }} disabled={busy}>
-          {busy ? "Please wait…" : mode === "login" ? "Sign in" : "Create account"}
+          {busy ? "Please wait…" : "Sign in"}
         </button>
 
-        <div style={{ textAlign: "center", marginTop: 14, fontSize: 13.5 }}>
-          {mode === "login" ? (
-            <>No account? <a onClick={() => setMode("register")} style={{ cursor: "pointer" }}>Register</a></>
-          ) : (
-            <>Have an account? <a onClick={() => setMode("login")} style={{ cursor: "pointer" }}>Sign in</a></>
-          )}
+        <div className="demo-creds">
+          <strong>Demo accounts</strong> (password <code>demo1234</code>):<br />
+          admin@demo.com · resident@demo.com · dev@demo.com
         </div>
-
-        {mode === "login" && (
-          <div className="demo-creds">
-            <strong>Demo accounts</strong> (password <code>demo1234</code>):<br />
-            admin@demo.com · resident@demo.com · dev@demo.com
-          </div>
-        )}
       </form>
     </div>
   );

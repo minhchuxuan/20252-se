@@ -4,16 +4,14 @@ from __future__ import annotations
 
 from sqlalchemy.orm import Session
 
-from ..config import settings
 from ..core.errors import AuthError, ConflictError
 from ..core.security import create_access_token, hash_password, verify_password
-from ..domain.enums import Role, TariffType
-from ..domain.models import Home, Tariff, User
+from ..domain.enums import Role
+from ..domain.models import Home, User
 from ..repositories import (
     DevicePermissionRepository,
     DeviceRepository,
     HomeRepository,
-    TariffRepository,
     UserRepository,
 )
 from .provisioning import provision_unit
@@ -26,32 +24,10 @@ class AuthService:
         self.homes = HomeRepository(db)
         self.permissions = DevicePermissionRepository(db)
         self.devices = DeviceRepository(db)
-        self.tariffs = TariffRepository(db)
 
-    def register_admin(self, email: str, full_name: str, password: str, building_name: str) -> User:
-        """Public sign-up: the apartment owner / building management registers and becomes
-        the Administrator. The Administrator owns no single unit (home_id NULL) and oversees
-        every unit in the building; a building-wide default tariff is created on first sign-up."""
-        email = email.lower()
-        if self.users.by_email(email):
-            raise ConflictError("Email already registered")
-        user = self.users.add(
-            User(
-                email=email,
-                full_name=full_name,
-                password_hash=hash_password(password),
-                role=Role.ADMIN,
-                home_id=None,
-            )
-        )
-        if self.tariffs.active_for_home(None) is None:
-            self.db.add(Tariff(
-                home_id=None, name="Default flat", type=TariffType.FLAT,
-                config={"price": settings.default_tariff_vnd_per_kwh},
-                currency=settings.currency, active=True,
-            ))
-        self.db.commit()
-        return user
+    # Account creation is Administrator-only: the Administrator is seeded at deployment,
+    # and Residents are onboarded through create_resident (BR-1, NFR-SEC-2). There is no
+    # public self-registration path that could mint an Administrator.
 
     def authenticate(self, email: str, password: str) -> User:
         user = self.users.by_email(email.lower())

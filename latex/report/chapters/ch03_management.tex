@@ -1,24 +1,44 @@
 \chapter{Software Project Management}
 
-This chapter documents the project management artifacts for SHEO following the
-framework taught in Lecture~C04: the four~Ps, stakeholder analysis, Work Breakdown
+This chapter documents the project management artifacts for SHEO using the standard
+project-management framework: the four~Ps, stakeholder analysis, Work Breakdown
 Structure (WBS), effort estimation, scheduling, and risk management. These artifacts
-are constructed to satisfy the course deliverable requirements and to reflect the
-actual scope and constraints of a small student team building a software-only system.
+reflect the actual scope and constraints of a small team building a software-only system.
 
 % ---------------------------------------------------------------------------
 \section{The Four Ps}
 % ---------------------------------------------------------------------------
 
 \subsection{People}
-The development team consists of six undergraduate students, each taking on
+The development team consists of six developers, each taking on
 overlapping roles across the project lifecycle.  No dedicated project manager
 was appointed; instead, the team operated with shared responsibility and peer
 review.  External stakeholders include the IoT contractor (Client), the building
 management organisation (Customer), and the tenants who use the system daily
 (End-users / Residents).  Skill coverage spans backend engineering (FastAPI,
-Python), frontend development (React/TypeScript), systems integration, and
-documentation.
+Python), frontend development (React/JavaScript), systems integration, and
+documentation.  The work was divided on a feature basis --- each member owns one
+product module end to end, from its requirements through its design, code and tests.
+Table~\ref{tab:task-alloc} records this allocation.
+
+\begin{table}[htbp]
+\centering
+\caption{Team and task allocation. Each member owns one product module end to end.}
+\label{tab:task-alloc}
+\small
+\begin{tabularx}{\linewidth}{@{}l l Y@{}}
+\toprule
+\textbf{Member} & \textbf{Student ID} & \textbf{Primary responsibility} \\
+\midrule
+Nguyen Tien Phat & 20235544 & Authentication, accounts and role-based access control; database schema and persistence; build, configuration and deployment. \emph{(Team lead / integration.)} \\
+Chu Xuan Minh & 20235527 & Device monitoring and capability-driven control: real-time telemetry, the capability schema, command validation and offline detection. \\
+Nguyen Dinh Truong & 20235566 & Explainable automation: the \texttt{WHEN--THEN} rule engine, conflict detection, the scheduler, and auto-actions with undo. \\
+Vu Hai An & 20235468 & Habit recommendations and VND bill-saving estimation; the building-wide tariff model; reports and CSV export. \\
+Nguyen Binh Anh & 20235470 & Frontend / UI--UX: all React pages, the capability-driven control widget, the live dashboard, and the usability evaluation. \\
+Phung Gia Huy & 20235506 & Mock device simulator and live WebSocket streaming; the automated test suite and quality assurance (V-model, black-box and white-box testing). \\
+\bottomrule
+\end{tabularx}
+\end{table}
 
 \subsection{Product}
 SHEO (AI-Driven Smart Home Energy Optimizer) is a web-based platform that
@@ -32,15 +52,14 @@ layer via a capability schema; no physical hardware is procured or modified.
 The team adopted an \emph{incremental} development approach: a functional
 backend spine was delivered first, followed by successive increments adding
 device control, the rules engine, the recommendation module, and the web UI.
-Each increment closed with automated regression testing (65 test cases) and a
-peer code-review pass.  This mirrors the Incremental model described in~C02 and
+Each increment closed with automated regression testing (67 test cases) and a
+peer code-review pass.  This follows the Incremental model and
 aligns with Agile values of working software and customer collaboration.
 
 \subsection{Project}
-The project is a temporary, unique academic endeavour with a fixed delivery date.
+The project is a temporary, unique endeavour with a fixed delivery date.
 Key constraints are: no physical IoT hardware available (mitigated by a
-deterministic simulator), a six-person team with limited availability, and a
-requirement to satisfy course deliverables in parallel with development.  Success
+deterministic simulator) and a six-person team with limited availability.  Success
 is measured against the functional requirements (REQ-4.1--REQ-4.5), non-functional
 requirements (NFR-PER, NFR-SAF, NFR-SEC), and the acceptance criteria in the test
 plan.
@@ -49,8 +68,8 @@ plan.
 \section{Stakeholder Analysis}
 % ---------------------------------------------------------------------------
 
-Table~\ref{tab:pm-stakeholders} identifies all stakeholders, their role in the C01
-framework, and their principal interests and influence over the project.
+Table~\ref{tab:pm-stakeholders} identifies all stakeholders, their role,
+and their principal interests and influence over the project.
 
 \begin{table}[htbp]
   \caption{SHEO Stakeholder Analysis}
@@ -58,7 +77,7 @@ framework, and their principal interests and influence over the project.
   \centering
   \begin{tabularx}{\linewidth}{>{\bfseries}L{2.5cm} L{2.3cm} Y Y}
     \toprule
-    Stakeholder & C01 Role & Interest & Influence \\
+    Stakeholder & Role & Interest & Influence \\
     \midrule
     IoT Contractor
       & Client
@@ -77,7 +96,7 @@ framework, and their principal interests and influence over the project.
     \addlinespace
     Development Team
       & Developer / Tester
-      & Deliver a correct, maintainable product within course constraints
+      & Deliver a correct, maintainable product within project constraints
       & High (internal) --- executes all design, build, and test activities \\
     \addlinespace
     System Scheduler
@@ -165,7 +184,7 @@ verified at handover.
 
   \multicolumn{3}{@{}l}{\textbf{9\ \ Testing}} \\[2pt]
   9.1 & Unit and integration test suite
-      & Automated suite covers all REQ-4.x items; all 65 test cases pass on a clean checkout. \\[2pt]
+      & Automated suite covers all REQ-4.x items; all 67 test cases pass on a clean checkout. \\[2pt]
   9.2 & Acceptance test mapping
       & Each functional requirement is traced to at least one passing test case in the test-plan RTM. \\[4pt]
 
@@ -175,7 +194,7 @@ verified at handover.
   10.2 & Software Design Document
       & SDD covers architecture, detailed design, UI/UX, and traceability; all diagrams are consistent with code. \\[2pt]
   10.3 & Project management report
-      & This chapter is produced and included in the course deliverable package. \\
+      & This chapter is produced and included in the project documentation package. \\
 \end{longtable}
 
 % ---------------------------------------------------------------------------
@@ -186,8 +205,7 @@ Effort was estimated using a \emph{complexity-based sizing} method: each work
 package was classified as Small (S), Medium (M), or Large (L) based on the number
 of components involved, interface dependencies, and uncertainty.  A baseline
 productivity rate was then applied (S~=~2~person-days, M~=~4~person-days,
-L~=~7~person-days), which is consistent with the effort-table approach taught
-in~C04.  Table~\ref{tab:estimation} summarises the result.  Total
+L~=~7~person-days).  Table~\ref{tab:estimation} summarises the result.  Total
 estimated effort is approximately \textbf{68 person-days} across the six-member
 team over a twelve-week period (approximately 11~person-days per team member).
 
@@ -232,7 +250,7 @@ Table~\ref{tab:cpm} lists the eight planning tasks, their predecessors, duration
 (in calendar days), and the Early Start (ES) and Early Finish (EF) values computed
 by the Critical Path Method.  All durations assume a parallel team of six with
 partial time availability (estimated effective capacity of approximately 40\% per
-day per member during semester).
+day per member).
 
 \begin{table}[htbp]
   \caption{CPM Task Schedule (calendar days from project start)}
@@ -325,7 +343,7 @@ non-critical Monitoring task (T5).
 \section{Risk Management}
 % ---------------------------------------------------------------------------
 
-Risk management followed the five-step process from~C04: plan, identify, analyse
+Risk management followed a five-step process: plan, identify, analyse
 (Risk level~$=$~Probability~$\times$~Impact), respond
 (Avoid / Transfer / Mitigate / Accept), and monitor.
 Table~\ref{tab:risks} presents the SHEO risk register.
@@ -403,7 +421,7 @@ to~9.
     & Major
     & 3
     & Mitigate
-    & All database queries are scoped by the unit identifier carried in the verified session token; an adversarial code-review pass specifically targeted cross-unit access vulnerabilities; all findings were corrected and re-tested before delivery. \\[4pt]
+    & All resident-facing queries are scoped to the caller's own unit, while the Administrator's oversight queries deliberately span the building; an adversarial code-review pass specifically targeted cross-unit access vulnerabilities; all findings were corrected and re-tested before delivery. \\[4pt]
 
   Frontend--backend integration failure after independent parallel development
     & Technical

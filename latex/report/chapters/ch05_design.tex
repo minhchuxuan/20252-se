@@ -1,7 +1,7 @@
 \chapter{Software Architecture and Design}\label{chap:design}
 
-This chapter realises the first half of Lecture~C07 (Software Design), and documents the
-structure as a software design description in the sense of IEEE~1016~\cite{ieee1016}. Where the
+This chapter documents the structure of SHEO as a software design description in the
+sense of IEEE~1016~\cite{ieee1016}. Where the
 requirements chapter states \emph{what} the AI-Driven Smart Home Energy Optimizer
 (SHEO) must do, this chapter states \emph{how} the system is structured to deliver
 it: the design goals that govern every decision (\S\ref{sec:design-goals}), the
@@ -10,14 +10,13 @@ and class decomposition (\S\ref{sec:components}--\S\ref{sec:classes}), the
 design patterns that give the structure its flexibility
 (\S\ref{sec:patterns}), the detailed behaviour of the two central control paths
 (\S\ref{sec:behaviour}), and finally the two subsystems that constitute the
-intellectual heart of the product (\S\ref{sec:heart}). Throughout, the design is
-presented in the conceptual vocabulary of the course, transforming the analysis
-model into a design model in the sense of ISO/IEC/IEEE~12207.
+intellectual heart of the product (\S\ref{sec:heart}). Throughout, the design
+transforms the analysis model of the requirements chapter into a concrete design model.
 
 \section{Design goals}
 \label{sec:design-goals}
 
-The design is governed by the four fundamental concepts taught in C07: abstraction,
+The design is governed by four fundamental design concepts: abstraction,
 modularity, the cohesion/coupling balance, and information hiding. These are not
 abstract ideals here; each is realised by a concrete mechanism in SHEO. The system
 is decomposed into modules that each own a single capability (high cohesion) and
@@ -36,7 +35,7 @@ asserted.
 
 \begin{table}[htbp]
 \centering
-\caption{Each C07 design concept and the SHEO mechanism that realises it.}
+\caption{Each design concept and the SHEO mechanism that realises it.}
 \label{tab:design-goals}
 \begin{tabularx}{\textwidth}{L{0.20\textwidth} Y Y}
 \toprule
@@ -70,7 +69,7 @@ schema hides device-type variance from both the front-end and the capability-val
 \subsection{The architectural style}
 
 SHEO is a \textbf{three-tier client--server} application whose server interior
-composes three further architectural styles taught in C07, each selected to satisfy
+composes three further architectural styles, each selected to satisfy
 a specific quality goal:
 
 \begin{enumerate}[leftmargin=1.4em]
@@ -118,13 +117,12 @@ into either.
 
 \subsection{Alternatives considered}
 
-Two architectural decisions deserve an explicit record of the alternatives weighed,
-in the spirit of the C07 candidate-assessment step.
+Two architectural decisions deserve an explicit record of the alternatives weighed.
 
 \begin{itemize}[leftmargin=1.4em]
   \item \emph{In-process event bus versus an external message broker.} A broker
   (for example a message queue or an MQTT bus) would permit horizontal scaling but
-  would force an external infrastructure dependency that a single-node course demo
+  would force an external infrastructure dependency that a single-node deployment
   cannot assume. SHEO instead runs its simulator and scheduler as in-process
   asynchronous tasks that communicate over an in-process publish/subscribe bus.
   Because producers and consumers already talk through that publish/subscribe seam,
@@ -231,7 +229,7 @@ Figure~\ref{fig:component}.}{fig:frontend}
 \label{sec:classes}
 
 The static model, shown in Figure~\ref{fig:class}, is organised around the
-\textbf{entity/boundary/control} separation taught in C07. \emph{Entity} classes
+\textbf{entity/boundary/control} separation. \emph{Entity} classes
 (the object-relational aggregates, with the unit (a Home occupied by one Resident) as the aggregate root) hold
 persistent state; \emph{boundary} classes (the routers and the capability-driven
 control component) mediate interaction with the outside world; and \emph{control}
@@ -286,7 +284,7 @@ and singly responsible:
 \section{Design patterns}
 \label{sec:patterns}
 
-Five design patterns give the structure its flexibility; each is realised by a
+Five design patterns~\cite{gof} give the structure its flexibility; each is realised by a
 concrete component and, where natural, advances a SOLID principle. Strategy, Observer,
 and State are classical Gang-of-Four (GoF) behavioural patterns; Repository and
 Dependency Injection are architectural patterns from Fowler's \emph{Patterns of
@@ -330,9 +328,10 @@ constructions --- a direct application of the Dependency-Inversion Principle, an
 structural basis of role-based access control. \\
 State (GoF) &
 Let an object alter its behaviour as its internal state changes. &
-The rule and execution lifecycles are modelled as explicit states (for example a rule
-moving through draft, enabled, and disabled; an execution through applied, undone, and
-expired), so behaviour follows the lifecycle rather than scattered conditionals. \\
+The rule and execution lifecycles are tracked by explicit status flags rather than
+scattered ad-hoc conditions: a rule is enabled or disabled and may be flagged for
+recalculation, and an execution is applied, undone, or past its undo window. Behaviour
+then follows these recorded states. \\
 \bottomrule
 \end{tabularx}
 \end{table}

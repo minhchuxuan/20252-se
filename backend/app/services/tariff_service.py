@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 
 from ..config import settings
 from ..core.clock import now
+from ..core.timeutil import to_local
 from ..domain.enums import TariffType
 from ..domain.models import Tariff
 from ..repositories import TariffRepository
@@ -123,7 +124,9 @@ class TariffService:
             return False
         sh, sm = map(int, start.split(":"))
         eh, em = map(int, end.split(":"))
-        s, e, cur = time(sh, sm), time(eh, em), ts.time()
+        # Peak/off-peak windows are defined in local wall-clock time, so compare
+        # against the local time-of-day rather than UTC.
+        s, e, cur = time(sh, sm), time(eh, em), to_local(ts).time()
         if s <= e:
             return s <= cur < e
         return cur >= s or cur < e  # window wraps midnight

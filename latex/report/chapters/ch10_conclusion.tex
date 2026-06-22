@@ -30,9 +30,9 @@ are:
         behaviour change and financial outcome.
 \end{itemize}
 
-The system is fully implemented and verified: \textbf{65 automated tests} (unit,
-integration, system, and acceptance levels) pass against the current codebase,
-and all functional requirement families listed in the SRS are represented in the
+The system is fully implemented and verified: \textbf{67 automated tests} (unit,
+integration, and system levels) pass against the current codebase, and all
+functional requirement families listed in the SRS are represented in the
 test suite's traceability matrix.
 
 \section{Requirements Satisfaction}
@@ -53,7 +53,7 @@ post-hoc validation that the estimate was meaningful.
 
 Table~\ref{tab:req-satisfaction} maps each functional requirement family to its
 implementation.  Collectively, these families are exercised by the suite of
-65 automated tests, whose per-requirement traceability is detailed in the
+67 automated tests, whose per-requirement traceability is detailed in the
 appendix.
 
 \begin{table}[htbp]
@@ -67,89 +67,19 @@ appendix.
     REQ-4.1 & Real-time device monitoring & The device-listing and monitoring service with its capability widget \\
     REQ-4.2 & Remote device control & The device-control operation \\
     REQ-4.3 & WHEN--THEN automation rules & The rule engine \\
-    REQ-4.4 & Habit recommendations & The recommendation service and its savings estimate \\
+    REQ-4.4 & Habit recommendations & The recommendation service (pricing delegated to the optimisation service) \\
     REQ-4.5 & VND bill-saving dashboard & Cycle-savings aggregation in the bill-saving (optimisation) service \\
     \bottomrule
   \end{tabularx}
 \end{table}
 
-Non-functional requirements were addressed as follows: response-time
-constraints (NFR-PER) are enforced by asynchronous request handlers in the
-application server and in-memory caching; safety constraints (NFR-SAF) prevent
-the system from automatically powering off safety-critical devices; security
-constraints (NFR-SEC) are upheld by role-based access guards (the
-administrator-authorisation guards) and the IDOR vulnerability discovered during
-the adversarial review was patched and regression-tested.
-
-\section{Course-Concept Coverage}
-
-Table~\ref{tab:course-coverage} provides a candid assessment of how each
-lecture topic in IT3180E is reflected in the SHEO project artifacts.
-
-{\small
-\begin{xltabular}{\textwidth}{@{} l l X l @{}}
-  \caption{IT3180E lecture-topic coverage by SHEO project}\label{tab:course-coverage}\\
-    \toprule
-    \textbf{Lecture} & \textbf{Topic} & \textbf{Where addressed in this report} & \textbf{Coverage} \\
-    \midrule
-    \endfirsthead
-    \toprule
-    \textbf{Lecture} & \textbf{Topic} & \textbf{Where addressed in this report} & \textbf{Coverage} \\
-    \midrule
-    \endhead
-    C01 & SE overview; stakeholder roles
-        & Chapter~1: Client / Customer / Resident model, a general framing of the software-engineering lifecycle, quality focus, Function--Cost--Time triangle
-        & Strong \\[4pt]
-    C02 & Software development process
-        & Chapter~2: incremental model with agile-style iterations; ISO/IEC~9126 quality attributes mapped to NFRs
-        & Partial \\[4pt]
-    C03 & Agile / Scrum
-        & Chapter~2: working-software discipline maintained throughout; no formal Scrum roles or sprint artifacts documented
-        & Light \\[4pt]
-    C04 & Software project management
-        & Chapter~3: Work Breakdown Structure, effort-estimation table, CPM task network with critical path, Gantt schedule, and a risk register scored by Probability~$\times$~Impact with Avoid/Transfer/Mitigate/Accept responses
-        & Strong \\[4pt]
-    C05 & Software configuration management
-        & Chapter~8: dedicated CM plan identifying CIs, baselines, and Git workflow
-        & Partial \\[4pt]
-    C06 & Requirements analysis and UML
-        & Chapter~4: SRS, FR/NFR taxonomy, Use-Case Diagram, ERD, state-machine diagrams, activity-style user flow
-        & Strong \\[4pt]
-    C07 & Software design and UI/UX
-        & Chapter~5 (architecture, detailed design, and patterns) and Chapter~6 (UI/UX): context-of-use, user profiles, sitemap, user flow, wireframes, usability evaluation
-        & Strong \\[4pt]
-    C08 & Software construction
-        & Chapter~7: coding-style conventions, adversarial code review as formal inspection analogue, refactoring findings
-        & Partial \\[4pt]
-    C09 & Quality assurance: testing and maintenance
-        & Chapter~9: V-model mapping, black-box equivalence partitioning, boundary-value analysis, decision-table testing, white-box CFG examples, regression suite; maintenance classification
-        & Partial \\
-    \bottomrule
-  \end{xltabular}
-}
-
-The project is strongest where the course emphasises artefact production.
-\textbf{C01} coverage is strong because the stakeholder model is rendered
-end-to-end from the glossary through to the role enumeration in the
-implementation.
-\textbf{C04} coverage is strong because Chapter~3 produced the full
-project-management suite --- Work Breakdown Structure, effort estimation, a CPM
-task network with an identified critical path, a Gantt schedule, and a risk
-register scored by Probability~$\times$~Impact with explicit
-Avoid/Transfer/Mitigate/Accept responses.
-\textbf{C06} coverage is strong because the project produced a full SRS together
-with a complementary suite of UML diagrams (use-case, ERD, state machines).
-\textbf{C07} coverage is strong across both the architectural-design half and the
-UI/UX half.  Coverage is partial for \textbf{C02} (the incremental process model
-was followed in practice but not formally justified in a process document),
-\textbf{C05} (a dedicated CM plan exists but IEEE~828 compliance and the exact
-branching strategy are not fully cross-referenced from the main body),
-\textbf{C08} (the adversarial review activity occurred and its findings were
-corrected, but a formal inspection report was not produced as a standalone
-artefact), and \textbf{C09} (white-box CFG examples were added but a complete
-branch-coverage report was out of scope).  Coverage is lightest for \textbf{C03},
-which concerns the team-level Scrum process that is inherently difficult to
-demonstrate through a single design-and-build deliverable.
+Non-functional requirements were addressed as follows: response-time targets
+(NFR-PER) are addressed by asynchronous request handlers in the application
+server, though end-to-end latency was not load-tested; safety constraints
+(NFR-SAF) prevent the system from automatically powering off safety-critical
+devices; security constraints (NFR-SEC) are upheld by role-based access guards,
+and the IDOR vulnerability discovered during the adversarial review was patched
+and regression-tested.
 
 \section{Lessons Learned}
 
@@ -196,8 +126,8 @@ demonstrate through a single design-and-build deliverable.
   \item \textbf{The process model should be named early, not inferred later.}
         SHEO was built incrementally --- a working vertical slice first, then
         features fanned out --- which maps naturally to the Incremental model.
-        Not naming this decision explicitly in the process documentation made the
-        C02 coverage weaker than the actual practice warranted.
+        Not naming this decision explicitly in the process documentation
+        understated the rigour of what was actually practised.
 
   \item \textbf{Mock-before-hardware is a legitimate and traceable scope decision.}
         Decoupling the device-adapter interface from physical hardware
@@ -225,7 +155,8 @@ production-grade platform.
         the Vietnamese context.
 
   \item[Broader device and capability coverage]
-        Current device types cover air conditioners, lighting, and socket plugs.
+        Current device types cover plugs, bulbs, fans, air-conditioners, and
+        environment sensors.
         Extending the capability registry to include water heaters, inverter
         washing machines, and EV chargers would increase the platform's
         addressable saving potential without requiring architectural changes,
@@ -238,7 +169,7 @@ production-grade platform.
         engine, combined with multiple stateless API workers behind a load
         balancer,
         would support multi-building deployments and eliminate the single point
-        of failure identified in the NFR-SAF analysis.
+        of failure inherent in a single-process deployment.
 
   \item[Deeper project-management instrumentation]
         The project-management plan in Chapter~3 already establishes a Work
@@ -247,13 +178,13 @@ production-grade platform.
         follow-on phase could deepen these artefacts with earned-value tracking
         and periodic re-estimation as the project progresses.  Adopting a formal
         Scrum process with a maintained Product Backlog, two-week sprints, and a
-        Definition of Done would additionally close the C03 gap and improve
+        Definition of Done would additionally improve
         team-level visibility during development.
 
   \item[White-box coverage gate]
         The current test suite emphasises black-box equivalence partitioning and
         boundary-value analysis.  Adding an automated branch-coverage gate with a
-        minimum-coverage threshold would provide a C09-compliant white-box
+        minimum-coverage threshold would provide a white-box
         verification gate and prevent coverage regression as the codebase grows.
 
   \item[Richer analytics and personalised insights]

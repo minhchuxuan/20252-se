@@ -1,10 +1,10 @@
 \chapter{Software Development Process}
 
 This chapter describes the software development process adopted for the AI-Driven Smart Home
-Energy Optimizer (SHEO) project. It grounds that description in the theoretical framework
-taught in the course: the software development life cycle (SDLC), the classical process
-models, the agile philosophy, and the ISO/IEC~9126 quality model. Each section moves from
-the general course concept to its concrete instantiation in SHEO.
+Energy Optimizer (SHEO) project. It grounds that description in an established framework: the
+software development life cycle (SDLC), the classical process models, the agile philosophy,
+and the ISO/IEC~9126 quality model. Each section moves from the general concept to its
+concrete instantiation in SHEO.
 
 % ────────────────────────────────────────────────────────────────────────────────
 \section{The Software Development Life Cycle}
@@ -12,7 +12,7 @@ the general course concept to its concrete instantiation in SHEO.
 
 A software development life cycle (SDLC) partitions the construction of a software system
 into a sequence of well-defined, measurable phases, each with assigned responsibilities and
-verifiable outputs. The course identifies two complementary views of the SDLC.
+verifiable outputs. Two complementary views of the SDLC are useful here.
 
 \textbf{Phase-level view.} Five core phases characterise most plan-driven processes:
 \textit{Requirements Analysis} (understand and specify what the system must do),
@@ -51,7 +51,7 @@ deferred to a final testing stage, as the ISO/IEC~9126 standard prescribes.
 \section{Comparison of Process Models}
 \label{sec:proc-models}
 
-The course presents six classical process models. Table~\ref{tab:process-models} summarises
+Six classical process models are commonly distinguished. Table~\ref{tab:process-models} summarises
 the core idea and the conditions under which each model is most appropriate.
 
 \begin{longtable}{@{}p{3.2cm} p{5.5cm} p{5.5cm}@{}}
@@ -117,9 +117,8 @@ Spiral &
 \subsection{Model selection}
 
 SHEO was developed using an \textbf{incremental, agile-style process}. This is closest
-to the Incremental model in the course taxonomy, augmented by agile working practices
-described in Section~\ref{sec:agile}. The selection was justified by the following
-conditions, cross-referenced against the course's model-selection criteria.
+to the Incremental model, augmented by agile working practices described in
+Section~\ref{sec:agile}. The selection was justified by the following conditions.
 
 \begin{enumerate}[leftmargin=*, label=(\arabic*)]
   \item \textbf{Moderately understood requirements.} The functional scope---energy
@@ -171,7 +170,7 @@ demonstrable state before the next began.
         test cases from the test plan.
 
   \item \textbf{UI and integration.} React frontend pages, the capability-driven device
-        control widget, the user flow, and final integration verification across all 65
+        control widget, the user flow, and final integration verification across all 66
         test cases.
 \end{enumerate}
 
@@ -184,14 +183,14 @@ agile-style nature of the process.
 \section{Agile Practices Applied}
 \label{sec:agile}
 
-The course distinguishes between Agile as a \textit{philosophy} (the 2001 Manifesto) and
-Scrum as a specific \textit{framework}. SHEO embodied several Agile values and principles
-but did not run formal Scrum ceremonies. Each practised value is documented below.
+Agile is a \textit{philosophy} (the 2001 Manifesto~\cite{agile}), distinct from Scrum as a specific
+\textit{framework}. SHEO embodied several Agile values and principles but did not run formal
+Scrum ceremonies. Each practised value is documented below.
 
 \subsubsection*{Working software over documentation}
 The most consistently applied Agile value was the primacy of a runnable, tested product.
 At no point during development was the system reduced to a non-executing state; every
-increment was required to leave the full test suite passing before integration. The 54
+increment was required to leave the full test suite passing before integration. The 66
 automated test cases serve as the continuous evidence of this discipline. Documentation
 (the SDD, test plan, configuration management plan) was produced to capture design
 decisions, but it was never treated as a substitute for a working system.
@@ -210,7 +209,7 @@ excellence and good design enhance agility.
 
 \subsubsection*{Responding to change}
 Several design decisions were revised in response to feedback during development: the
-original role model was renamed to align with the course's stakeholder taxonomy;
+original role model was renamed to align with the project's stakeholder taxonomy;
 safety-rule NFRs were tightened after an adversarial review identified a cross-unit
 access vulnerability; and the capability schema was generalised to accommodate additional
 device types without modifying existing handlers. Each change was absorbed without
@@ -238,9 +237,9 @@ Scrum.
 \section{Quality Throughout the Process}
 \label{sec:quality}
 
-The course cites ISO/IEC~9126~\cite{iso9126} as the quality standard for software products and emphasises
-that quality assurance must run \textit{throughout} the development process, not only at
-the end. Table~\ref{tab:iso9126} maps each ISO/IEC~9126 quality characteristic to the
+ISO/IEC~9126~\cite{iso9126} is the relevant product-quality standard, and quality assurance
+must run \textit{throughout} the development process, not only at the end.
+Table~\ref{tab:iso9126} maps each ISO/IEC~9126 quality characteristic to the
 concrete mechanism or non-functional requirement (NFR) that addressed it in SHEO, together
 with the earliest phase at which that mechanism was active.
 
@@ -259,7 +258,7 @@ with the earliest phase at which that mechanism was active.
 \textbf{Functionality} &
   The set of features present and their suitability for intended tasks. &
   Functional requirements REQ-4.1 through REQ-4.5 (monitoring, control, rules,
-  recommendations, savings); validated by 65 automated acceptance and integration tests;
+  recommendations, savings); validated by 66 automated acceptance and integration tests;
   traced in the Requirements Traceability Matrix. &
   Requirements \\
 \addlinespace
@@ -281,7 +280,8 @@ with the earliest phase at which that mechanism was active.
 \addlinespace
 \textbf{Efficiency} &
   Resource consumption relative to performance under stated conditions. &
-  NFR-PER: API response time target $\le 200$\,ms under simulated concurrent load;
+  NFR-PER: API response-time target of $\le 2$\,s at the 95th percentile (per NFR-PER-2;
+  a design target, not yet load-tested);
   in-process database avoids network round-trips in the demo; the background simulator
   runs as a non-blocking asynchronous task to avoid blocking the request loop. &
   Design \\
@@ -313,6 +313,6 @@ endpoint was written. Maintainability was designed in from the outset through th
 schema and layered architecture. Efficiency targets were stated as NFRs and informed
 technology choices. Usability was evaluated iteratively through wireframes and heuristic
 review before the frontend was built. This continuous, cross-phase attention to quality is
-what both the course and the Agile philosophy prescribe, and it is what enabled SHEO to
-reach a state of 65 passing tests, a fully seeded and demonstrable product, and no known
+what the Agile philosophy prescribes, and it is what enabled SHEO to
+reach a state of 67 passing tests, a fully seeded and demonstrable product, and no known
 open defects at the point of submission.

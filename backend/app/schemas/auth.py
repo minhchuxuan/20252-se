@@ -6,13 +6,6 @@ from pydantic import BaseModel, ConfigDict, EmailStr, Field
 from ..domain.enums import Role
 
 
-class RegisterRequest(BaseModel):
-    email: EmailStr
-    full_name: str = Field(min_length=1, max_length=120)
-    password: str = Field(min_length=6, max_length=128)
-    building_name: str = Field(default="My Building", max_length=120)
-
-
 class LoginRequest(BaseModel):
     email: EmailStr
     password: str

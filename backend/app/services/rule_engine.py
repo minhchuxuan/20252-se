@@ -14,6 +14,7 @@ from ..config import settings
 from ..core.clock import now
 from ..core.errors import ConflictError, NotFoundError, ValidationError
 from ..core.events import EventType, bus
+from ..core.timeutil import to_local
 from ..domain.capability import get_capability, validate_command
 from ..domain.enums import (
     CommandOutcome,
@@ -218,15 +219,17 @@ class RuleEngine:
     def _condition_holds(self, cond: dict, default_device_id: int, ts: datetime) -> bool:
         ctype = cond.get("type")
         if ctype == "time":
+            # "19:00" means 7pm in the user's timezone, not 19:00 UTC.
+            local = to_local(ts)
             if cond.get("at"):
                 h, m = map(int, cond["at"].split(":"))
-                return ts.hour == h and ts.minute == m
+                return local.hour == h and local.minute == m
             if cond.get("between"):
                 a, b = cond["between"]
-                return self._in_window(a, b, ts)
+                return self._in_window(a, b, local)
             return False
         if ctype == "day":
-            return _DAYS[ts.weekday()] in [d.lower() for d in cond.get("days", [])]
+            return _DAYS[to_local(ts).weekday()] in [d.lower() for d in cond.get("days", [])]
         if ctype == "tariff_window":
             tariff = self.tariffs.active(self._home_of(default_device_id))
             return self.tariffs.current_window(tariff, ts) == cond.get("window")
@@ -259,8 +262,11 @@ class RuleEngine:
         control = rule.then_json.get("control")
         value = rule.then_json.get("value")
 
-        # Idempotency: skip if device already in the desired state.
-        if str((device.state or {}).get(control)) == str(value):
+        # Idempotency: skip (no execution, no notification) if the device already holds
+        # the rule's target value. Compared with the same normalization the validator
+        # and adapter apply, so a stored RANGE value (e.g. target 26.0) matches the
+        # rule's literal (26) instead of failing a naive "26.0" == "26" string compare.
+        if self._already_in_desired_state(device, control, value):
             return None
         # Cooldown to avoid rapid re-fire.
         if rule.last_fired_at and (now() - rule.last_fired_at) < timedelta(seconds=_FIRE_COOLDOWN_SECONDS):
@@ -374,6 +380,25 @@ class RuleEngine:
         return f"set {name} {control} to {value}"
 
     # ----------------------------------------------------------- helpers
+    def _already_in_desired_state(self, device: Device, control: str, value: Any) -> bool:
+        """True if the device's current state already equals the rule's target value.
+
+        The stored state value and the rule literal are normalized the same way the
+        validator does (RANGE -> float, TOGGLE/ENUM -> string), then compared
+        numerically when both are numbers and case-insensitively otherwise. This is
+        what makes the rule idempotent: a target already at 26 (stored 26.0) does not
+        re-fire just because the literal is the integer 26.
+        """
+        current = (device.state or {}).get(control)
+        if current is None:
+            return False
+        result = validate_command(DeviceType(device.type), control, value)
+        desired = result.normalized if result.ok else value
+        try:
+            return float(current) == float(desired)
+        except (TypeError, ValueError):
+            return str(current).strip().lower() == str(desired).strip().lower()
+
     def _device_or_404(self, device_id: int, home_id: int) -> Device:
         device = self.devices.in_home(device_id, home_id)
         if device is None:
