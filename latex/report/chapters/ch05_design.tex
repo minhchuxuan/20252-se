@@ -241,10 +241,13 @@ and singly responsible:
   estimation engine. It computes the historical baseline, estimates a rule's monthly
   saving in Vietnamese đồng (VND), accrues measured savings into the current billing
   cycle, and flags rules whose measured saving drifts from the estimate.
-  \item \textbf{Recommendation service} --- mines daily habits from telemetry into
-  human-readable \textsc{when}--\textsc{then} suggestions with a rationale and a VND
-  estimate, ranks and caps them, turns an accepted suggestion into a rule, and
-  suppresses a dismissed one by signature.
+  \item \textbf{Recommendation service} --- orchestrates the recommendation lifecycle:
+  it delegates habit \emph{detection} to a swappable \textbf{recommendation-provider port}
+  (the client's ``AI'', defaulting to a deterministic, explainable miner), then performs
+  the parts that are SHEO's own software --- pricing each candidate in VND via the
+  optimisation service, ranking and capping, turning an accepted suggestion into a rule,
+  and suppressing a dismissed one by signature. A black-box model can replace the default
+  provider behind the same port without affecting the VND estimator or any other layer.
   \item \textbf{Telemetry service} --- produces the dashboard aggregate, the
   unit-scoped consumption time-series, the top-consumers ranking, and the
   online/offline refresh that marks a device unreachable after a silence threshold.
@@ -282,7 +285,10 @@ Strategy (GoF) &
 Encapsulate a family of interchangeable behaviours behind one interface. &
 The device-adapter interface hierarchy (one strategy per device type) encapsulates each
 type's command semantics and power model, so no code branches on type. Adding a device
-type adds a strategy without editing callers --- the open/closed principle (OCP). \\
+type adds a strategy without editing callers --- the open/closed principle (OCP). The same
+pattern isolates the ``AI'': habit detection sits behind a \emph{recommendation-provider}
+port, so the default explainable miner and a future black-box ML provider are
+interchangeable strategies, swapped at the composition root. \\
 Observer (GoF) &
 Notify dependents of state changes without coupling them to the source. &
 The in-process event bus: producers publish typed events; the notification service and
@@ -399,9 +405,10 @@ Operating mode & Enumeration & \{cool, fan, dry, auto\}; default: cool & No \\
 
 \subsection{The bill-saving estimation algorithm}
 
-The second heart subsystem is the explainable estimation of a rule's monetary saving,
-which the design constraint requires to be transparent rather than a black box. Every
-estimate reduces to one formula, summed over the hours a rule affects:
+The second heart subsystem is the explainable estimation of a rule's monetary saving.
+It is deliberately kept inside SHEO --- never behind the recommendation-provider's
+black box --- so the figure the client values most stays transparent. Every estimate
+reduces to one formula, summed over the hours a rule affects:
 
 \begin{equation*}
 \begin{split}

@@ -221,13 +221,40 @@ telemetry and its controls (kind, range, allowed values, safety flags). It drive
 Adding a device type = **1 schema entry + 1 adapter**. This is the single source of truth
 that satisfies REQ-4.2.1 and eliminates a whole class of UI/API drift.
 
+### 8.1 The recommendation provider — the swappable "AI" boundary
+
+The client is an **AI contractor** who supplies the AI, so "finding the habit" is modelled
+as an externally-suppliable concern, not baked into SHEO. Habit **detection** sits behind a
+`RecommendationProvider` **port** (Strategy, `services/recommendation_provider.py`):
+
+```
+RecommendationProvider (ABC)
+  └─ mine(home_id) -> [RecommendationCandidate]   # WHEN/THEN + rationale, NO money
+HeuristicRecommendationProvider   # shipped default: deterministic, explainable miners
+FakeProvider / MLProvider …       # any substitute behind the same port
+```
+
+- The provider is **injected at the composition root** (the `RecommendationService`
+  constructor); the default is the explainable heuristic miner. A **black-box ML provider**
+  implementing the same port can replace it without touching the API, UI, rule engine, or
+  the VND estimator. *(Verified by a swappability test: default is heuristic; an injected
+  provider is the one consulted.)*
+- **Money stays out of the black box.** A `RecommendationCandidate` carries no VND — the
+  saving (REQ-4.5) is computed by SHEO's `OptimizationService`, and the
+  `RecommendationService` owns ranking, the min-saving filter, the active cap, suppression,
+  and conversion to a rule. This keeps the client's highest-priority, must-be-trustworthy
+  figure as SHEO's own transparent software.
+
+This mirrors the device-adapter pattern exactly: as mock adapters make SHEO *hardware-ready*
+behind a device port, the provider port makes it *model-ready* behind an AI port.
+
 ---
 
 ## 9. Design Patterns
 
 | Pattern | Where | SOLID/principle |
 |---|---|---|
-| **Strategy** | `adapters/` per-type device behaviour | OCP — add a type without editing callers |
+| **Strategy** | `adapters/` per-type device behaviour; **`RecommendationProvider`** (swappable AI habit-miner) | OCP — add a device type or swap the AI provider without editing callers |
 | **Observer** | `core/events` bus → WebSocket push + notifications | decouple state change from consumers |
 | **State** | device connectivity & rule/recommendation lifecycles | explicit, auditable transitions |
 | **Repository** | `repositories/` | isolate persistence from services |

@@ -7,7 +7,7 @@ verifies it --- an automated test, or design inspection where noted. It supports
 and backward (test~$\rightarrow$~requirement) traceability. Policy thresholds (refresh
 interval, 60\,s offline, 14-day baseline, 7-day minimum history, five active
 recommendations, 30-day dismissal, two-minute undo, AC compressor interval, $\pm$20\%
-drift) are centralised in the system configuration module. The full suite is \textbf{64 automated tests,
+drift) are centralised in the system configuration module. The full suite is \textbf{65 automated tests,
 all passing}.
 
 \section{Functional requirements}
@@ -83,7 +83,8 @@ BR-5 & Tariff manually configurable; VND default & The tariff service and the se
 \toprule
 \textbf{Pattern} & \textbf{Realisation in SHEO} & \textbf{Evidence} \\
 \midrule
-Strategy & Per-device-type behaviour and power model encapsulated in interchangeable adapters & The device-adapter interface and its per-type implementations \\
+Strategy (device adapters) & Per-device-type behaviour and power model encapsulated in interchangeable adapters & The device-adapter interface and its per-type implementations \\
+Strategy (recommendation provider) & The ``AI'' habit-miner sits behind a swappable provider port; the shipped default is a deterministic, explainable miner, and a black-box ML provider could replace it & The recommendation-provider port and its heuristic implementation; a test verifies the provider is swappable (default is the heuristic provider, and an injected provider is the one consulted for detection) \\
 Observer & Decoupled event fan-out (telemetry, notifications) & The event bus (Observer pattern) \\
 Repository & Persistence hidden behind cohesive accessors & The repository layer \\
 Dependency Injection & Request-scoped database session, user identity, and role guards & The dependency-injection provider for API handlers \\

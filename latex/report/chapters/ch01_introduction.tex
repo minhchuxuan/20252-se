@@ -145,20 +145,27 @@ hardware is used: real plugs, bulbs, fans, air-conditioners, and sensors are una
 to the team, so a \textbf{mock device simulator} stands in for them. The simulator
 implements the same device interface that a real vendor integration would, so the
 architecture remains hardware-ready, but the running product is demonstrable and
-testable entirely in software. Second, the ``AI'' is intentionally \emph{not} a
-black-box machine-learning model. It is an \textbf{explainable, rule-based} engine: every
-learned habit surfaces as a rule the user can read and every saving figure reduces to a
-documented formula. Opaque models were excluded precisely because they would defeat the
-client's high-priority demand that the saving be \emph{visible and trustworthy}.
+testable entirely in software. Second, the ``AI''---the habit detection the client (an
+AI contractor) supplies---is isolated behind a swappable \textbf{recommendation-provider
+port} (Strategy). The shipped default is an \textbf{explainable, rule-based} provider:
+every detected habit surfaces as a rule the user can read. A black-box machine-learning
+provider could be substituted behind the same port without touching the API, the UI, the
+rule engine, or---decisively---the VND saving estimator, which is deliberately kept as
+SHEO's own software so the saving always reduces to a documented formula. Shipping the
+explainable provider by default keeps the product demonstrable in software and honours the
+client's high-priority demand that the saving be \emph{visible and trustworthy}, while the
+design admits a learned model where one is warranted.
 
 Both decisions follow directly from the \emph{Function / Cost / Time} balance triangle
 that C01 places at the heart of project scoping. Procuring and integrating real hardware
 would inflate cost and time for no gain in the demonstrated function, whereas a
 deterministic simulator delivers the same observable behaviour within the course
-timeline. Likewise, a learned black-box model would raise development cost and risk while
-\emph{reducing} the function the client values most---the explainable VND saving. In both
-cases the chosen scope maximises the function that matters while respecting the cost and
-time available, which is exactly the trade-off C01 asks an engineer to make explicit.
+timeline. Likewise, building or training a model now would raise development cost and risk
+for no gain in demonstrated function, whereas the default explainable provider delivers it
+within the course timeline---and the provider port keeps a learned model available without
+re-architecting. In both cases the chosen scope maximises the function that matters while
+respecting the cost and time available, which is exactly the trade-off C01 asks an engineer
+to make explicit.
 
 \section{Report Structure}
 

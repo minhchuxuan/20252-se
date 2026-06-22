@@ -52,3 +52,38 @@ def test_dismiss_suppresses_recommendation(client, dev_headers):
     client.post(f"/api/recommendations/{rec['id']}/dismiss", headers=dev_headers)
     after = client.post("/api/recommendations/analyze", headers=dev_headers).json()
     assert all(r["id"] != rec["id"] for r in after)
+
+
+def test_recommendation_provider_is_swappable(client):
+    # The habit-miner ("AI") is a swappable RecommendationProvider (Strategy): SHEO
+    # depends on the port, so a black-box ML provider could replace the default miner
+    # without touching the service. (client fixture ensures the app/DB are seeded.)
+    from sqlalchemy import select
+
+    from app.database import SessionLocal
+    from app.domain.models import Home
+    from app.services.recommendation_provider import (
+        HeuristicRecommendationProvider,
+        RecommendationProvider,
+    )
+    from app.services.recommendation_service import RecommendationService
+
+    class _RecordingProvider(RecommendationProvider):
+        def __init__(self):
+            self.seen_home = None
+
+        def mine(self, home_id):
+            self.seen_home = home_id
+            return []
+
+    db = SessionLocal()
+    try:
+        # Default wiring uses the deterministic, explainable miner.
+        assert isinstance(RecommendationService(db).provider, HeuristicRecommendationProvider)
+        # An injected provider is the one actually consulted for detection.
+        home_id = db.scalars(select(Home)).first().id
+        fake = _RecordingProvider()
+        RecommendationService(db, provider=fake).analyze(home_id)
+        assert fake.seen_home == home_id
+    finally:
+        db.close()
