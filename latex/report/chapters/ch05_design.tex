@@ -203,6 +203,30 @@ through the REST and WebSocket ports. The event bus is the integration hub: the
 simulator and the device-control, rule, and recommendation services publish, while
 the notification service and the WebSocket connection manager subscribe.}{fig:component}
 
+The component diagram above treats the front-end as a single box behind those two
+ports. Figure~\ref{fig:frontend} opens that box and shows the front-end's own
+internal structure, which realises the \textbf{MVC} flavour described in
+\S\ref{sec:architecture}. The \emph{Controller} is \texttt{App.jsx} (routing and the
+role gate) together with \texttt{auth/AuthContext.jsx} (the session, the bearer token,
+and the current role); the \emph{View} is the navigation shell
+(\texttt{Layout.jsx}), the page components, the capability-driven
+\texttt{DeviceControl} component, and the shared UI primitives; and the
+\emph{Model} is the data the client holds --- the REST and WebSocket payloads, the
+capability schema that \texttt{DeviceControl} renders itself over, and the
+\texttt{lib/format.js} helpers for currency, palette, and time. Crucially, the only
+two arrows that leave the front-end are the same two ports as before:
+\texttt{api/client.js} (REST) and \texttt{api/ws.js} (WebSocket). This keeps the
+client's structure answerable to the same maintainability question as the server's
+class diagram --- ``to change behaviour~X, which component do I touch?'' --- without
+widening the contract to the server.
+
+\fig{fig17-frontend-component.png}{Front-end component structure. The single-page
+application follows an MVC split --- \texttt{App.jsx} and \texttt{AuthContext} as
+Controller, \texttt{Layout}, the pages, \texttt{DeviceControl}, and the shared UI as
+View, and the server payloads plus capability schema as Model --- and reaches the
+server only through the same REST and WebSocket ports as
+Figure~\ref{fig:component}.}{fig:frontend}
+
 \section{Class design}
 \label{sec:classes}
 
