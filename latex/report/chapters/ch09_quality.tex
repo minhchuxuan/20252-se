@@ -10,7 +10,7 @@ Each level opens with a statement of its objectives, scope and approach, and the
 lists its test cases in a uniform $\langle$test case, input, expected output,
 status$\rangle$ form, with the design technique (a standard white-box or black-box
 technique) indicated for each. The discussion is grounded in the project's
-\textbf{70 automated tests} --- 67 passing and 3 currently failing, the latter
+\textbf{69 automated tests} --- 66 passing and 3 currently failing, the latter
 exposing genuine open defects --- and concludes with a requirements-to-tests
 traceability summary and a forward-looking classification of anticipated
 maintenance.
@@ -74,7 +74,7 @@ the design chapter (Figure~\ref{fig:seq-control}).
 \section{Test Strategy and Levels}
 \label{sec:qa-strategy}
 
-The automated suite comprises \textbf{70 tests}: 67 functional tests that all pass,
+The automated suite comprises \textbf{69 tests}: 66 functional tests that all pass,
 and 3 negative \emph{open-defect} tests that currently fail, each exposing a genuine
 bug (Table~\ref{tab:open-defects}). It runs in-process against the
 application's public interface using an in-memory test harness, requiring no live
@@ -106,7 +106,7 @@ Table~\ref{tab:levels} summarises how the levels, their objectives, the dominant
 design-technique family, and the suites that populate them line up. The three
 following sections take each level in turn; in their test-case tables the
 \emph{Status} column records the outcome of the most recent run --- all
-\textbf{67 functional tests pass} (the 3 open-defect tests of
+\textbf{66 functional tests pass} (the 3 open-defect tests of
 Table~\ref{tab:open-defects} currently fail).
 
 \begin{table}[htbp]
@@ -123,7 +123,7 @@ Unit        & Pure domain functions in isolation (no HTTP, no DB) &
               \texttt{unit\_domain} \\
 Integration & Wired components cooperating across real boundaries
               (router/service/repository/persistence, event bus, adapters) &
-              White-box: branch and decision coverage of the integrated path &
+              White-box: statement, branch and path coverage of the integrated path &
               \texttt{devices\_capability}, \texttt{rules}, \texttt{safety} \\
 System      & End-to-end, user-visible behaviour through the public REST API &
               Black-box: equivalence partitioning, boundary-value analysis,
@@ -259,11 +259,14 @@ through the Developer's maintenance unit (which owns the complete device package
 The object under test is the \emph{integration logic}: the branches one component
 takes depending on another component's state.
 
-\paragraph{Approach.} \emph{Branch / decision coverage of the integrated control
-flow}. Because the team knows the internal wiring (white-box), each integration
-test is designed to drive a specific cross-component decision to both of its
-outcomes --- online vs.\ offline, in-range vs.\ out-of-range, auto-apply on vs.\
-off, conflict vs.\ none, undo-within vs.\ after the window.
+\paragraph{Approach.} \emph{Branch coverage of the integrated control flow}
+(branch coverage is also called \emph{decision coverage}: every decision is driven to
+both its true and false outcomes). Because the team knows the internal wiring
+(white-box), each integration test is designed to drive a specific cross-component
+decision to both of its outcomes --- online vs.\ offline, in-range vs.\
+out-of-range, auto-apply on vs.\ off, conflict vs.\ none, undo-within vs.\ after the
+window. The technique column therefore uses the same statement / branch / path
+vocabulary as the unit level.
 
 As the worked example, consider the integrated \emph{command-outcome} path a
 device command follows through the service, in the order the code evaluates it: it
@@ -335,7 +338,7 @@ lists the full integration suite.
 \begin{table}[htbp]
 \centering
 \caption{Integration-level test cases (suites \texttt{devices\_capability},
-\texttt{rules}, \texttt{safety}); white-box branch / decision coverage. All pass.}
+\texttt{rules}, \texttt{safety}); white-box statement, branch and path coverage. All pass.}
 \label{tab:int-cases}
 {\footnotesize
 \begin{tabularx}{\textwidth}{@{}L{0.225\textwidth} X X c L{0.085\textwidth}@{}}
@@ -344,18 +347,18 @@ lists the full integration suite.
 \midrule
 IT-1 \texttt{capability\_endpoint\_drives\_controls} & GET a device's capability & controls $=$ schema set & Pass & Stmt cov. \\
 IT-2 \texttt{command\_rejects\_out\_of\_range} & POST AC target $=99$ & 422 rejected & Pass & Branch cov. \\
-IT-3 \texttt{offline\_device\_command\_times\_out} & force device offline, POST command & outcome $=$ timeout & Pass & Decision cov. \\
+IT-3 \texttt{offline\_device\_command\_times\_out} & force device offline, POST command & outcome $=$ timeout & Pass & Branch cov. \\
 IT-4 \texttt{power\_on\_off\_control} (plug/bulb/fan/AC) & POST power \texttt{on}, then \texttt{off} & state on $\rightarrow$ off & Pass & Branch cov. \\
 IT-5 \texttt{add\_and\_delete\_mock\_device} & POST a device, then DELETE it & created (201), then gone & Pass & Path cov. \\
 IT-6 \texttt{action\_must\_match\_capability} & rule: plug brightness$=50$ & invalid (422) & Pass & Branch cov. \\
 IT-7 \texttt{auto\_action\_off\_by\_default} & create rule, no \texttt{auto\_apply} & \texttt{auto\_apply} $=$ false & Pass & Branch cov. \\
-IT-8 \texttt{conflict\_detection} & two rules, same fan, overlapping, on vs.\ off & conflict flagged & Pass & Decision cov. \\
+IT-8 \texttt{conflict\_detection} & two rules, same fan, overlapping, on vs.\ off & conflict flagged & Pass & Branch cov. \\
 IT-9 \texttt{enable\_disable\_edit\_delete} & create, patch enabled/name, delete & updated, then removed & Pass & Path cov. \\
 IT-10 \texttt{time\_rules\_fire\_in\_local\_tz} & rule ``at 19:00'', clock 12:00 UTC & fires ($=$19:00 local); not at 19:00 UTC & Pass & Branch cov. \\
 IT-11 \texttt{execution\_logging\_undo\_history} & auto-rule fires, undo, delete rule & success logged; undone; history kept & Pass & Path cov. \\
-IT-12 \texttt{ac\_compressor\_rate\_limit} & two compressor commands within 3 min & second rejected & Pass & Decision cov. \\
-IT-13 \texttt{safety\_critical\_not\_auto\_off} & auto-rule powers off the fridge & skipped (NFR-SAF-2) & Pass & Decision cov. \\
-IT-14 \texttt{safety\_warnings\_on\_validation} & validate temp / safety-critical / unattended-off rule & warnings returned & Pass & Decision cov. \\
+IT-12 \texttt{ac\_compressor\_rate\_limit} & two compressor commands within 3 min & second rejected & Pass & Branch cov. \\
+IT-13 \texttt{safety\_critical\_not\_auto\_off} & auto-rule powers off the fridge & skipped (NFR-SAF-2) & Pass & Branch cov. \\
+IT-14 \texttt{safety\_warnings\_on\_validation} & validate temp / safety-critical / unattended-off rule & warnings returned & Pass & Branch cov. \\
 IT-15 \texttt{safety\_critical\_not\_forced\_offline} & set the fridge offline & rejected (safety violation) & Pass & Branch cov. \\
 IT-16 \texttt{rule\_idempotent\_when\_satisfied} & auto-rule sets AC \texttt{target}$=26$ with the device already at $26$ (stored $26.0$) & no execution and no notification (engine returns \textsc{none}) & Pass & Branch cov. \\
 \bottomrule
@@ -435,9 +438,8 @@ ST-26 \texttt{drift\_check\_is\_reachable} & run the drift check & drift flag re
 ST-27 \texttt{recommendations\_readable} & analyse, then GET recommendations & WHEN/THEN + rationale + window & Pass & EP \\
 ST-28 \texttt{recommendations\_ranked\_capped} & analyse usage & sorted by VND, at most five & Pass & BVA \\
 ST-29 \texttt{new\_device\_yields\_no\_rec} & add a fresh device, analyse & none for it ($<7$ days data) & Pass & EP \\
-ST-30 \texttt{recommendation\_provider\_swappable} & inject a fake provider & default Heuristic; injected one consulted & Pass & Seam \\
-ST-31 \texttt{accept\_becomes\_rule} & POST accept a recommendation & 201 rule; no longer active & Pass & State \\
-ST-32 \texttt{dismiss\_suppresses} & POST dismiss, then re-analyse & suppressed (not re-shown) & Pass & State \\
+ST-30 \texttt{accept\_becomes\_rule} & POST accept a recommendation & 201 rule; no longer active & Pass & State \\
+ST-31 \texttt{dismiss\_suppresses} & POST dismiss, then re-analyse & suppressed (not re-shown) & Pass & State \\
 \bottomrule
 \end{xltabular}}
 
@@ -448,7 +450,7 @@ real gaps rather than hide them. Table~\ref{tab:open-defects} lists three
 \emph{negative} black-box tests that \textbf{currently fail}: each asserts the
 behaviour the system \emph{should} exhibit on an awkward input but does not yet, so it
 pins down a genuine open defect as an executable to-do. They are designed with the
-same black-box techniques and are part of the 70-test total (67 pass, these 3 fail).
+same black-box techniques and are part of the 69-test total (66 pass, these 3 fail).
 
 \begin{table}[htbp]
 \centering
@@ -480,7 +482,7 @@ turn green once the corresponding validation is added.
 \section{Results and Traceability}
 \label{sec:qa-results}
 
-The run totals \textbf{70 tests: 67 passed and 3 failed}. The 67 functional unit,
+The run totals \textbf{69 tests: 66 passed and 3 failed}. The 66 functional unit,
 integration and system tests all pass (the \emph{Status} column of every other table
 above); the 3 failures are the open-defect tests of Table~\ref{tab:open-defects},
 which expose real bugs the team has found but not yet fixed and records transparently
@@ -507,7 +509,7 @@ REQ-4.2 & Device control via capability schema (load, validate, command) &
 REQ-4.3 & Rules, conflict detection, auto-action opt-in and undo &
   IT-8 conflicting rules detected; IT-7 automatic actions off by default \\
 REQ-4.4 & Recommendation generation, ranking and approval &
-  ST-31 an accepted recommendation becomes a rule; ST-28 ranked and capped \\
+  ST-30 an accepted recommendation becomes a rule; ST-28 ranked and capped \\
 REQ-4.5 & Bill-saving estimation and cycle reporting &
   ST-22 estimate follows the formula; ST-24 summary reports the cycle \\
 NFR-SAF & Compressor rate limit, safety-critical protection, warnings &
