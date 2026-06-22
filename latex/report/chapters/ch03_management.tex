@@ -52,7 +52,7 @@ layer via a capability schema; no physical hardware is procured or modified.
 The team adopted an \emph{incremental} development approach: a functional
 backend spine was delivered first, followed by successive increments adding
 device control, the rules engine, the recommendation module, and the web UI.
-Each increment closed with automated regression testing (67 test cases) and a
+Each increment closed with automated regression testing (70 tests, 67 passing) and a
 peer code-review pass.  This follows the Incremental model and
 aligns with Agile values of working software and customer collaboration.
 
@@ -184,7 +184,7 @@ verified at handover.
 
   \multicolumn{3}{@{}l}{\textbf{9\ \ Testing}} \\[2pt]
   9.1 & Unit and integration test suite
-      & Automated suite covers all REQ-4.x items; all 67 test cases pass on a clean checkout. \\[2pt]
+      & Automated suite covers all REQ-4.x items; the 67 functional tests pass on a clean checkout (3 open-defect tests still fail, marking known bugs). \\[2pt]
   9.2 & Acceptance test mapping
       & Each functional requirement is traced to at least one passing test case in the test-plan RTM. \\[4pt]
 

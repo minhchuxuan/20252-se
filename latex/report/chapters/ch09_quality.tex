@@ -10,7 +10,8 @@ Each level opens with a statement of its objectives, scope and approach, and the
 lists its test cases in a uniform $\langle$test case, input, expected output,
 status$\rangle$ form, with the design technique (a standard white-box or black-box
 technique) indicated for each. The discussion is grounded in the project's
-\textbf{67 automated tests} and concludes with a requirements-to-tests
+\textbf{70 automated tests} --- 67 passing and 3 currently failing, the latter
+exposing genuine open defects --- and concludes with a requirements-to-tests
 traceability summary and a forward-looking classification of anticipated
 maintenance.
 
@@ -73,7 +74,9 @@ the design chapter (Figure~\ref{fig:seq-control}).
 \section{Test Strategy and Levels}
 \label{sec:qa-strategy}
 
-The automated suite comprises \textbf{67 tests}. It runs in-process against the
+The automated suite comprises \textbf{70 tests}: 67 functional tests that all pass,
+and 3 negative \emph{open-defect} tests that currently fail, each exposing a genuine
+bug (Table~\ref{tab:open-defects}). It runs in-process against the
 application's public interface using an in-memory test harness, requiring no live
 server, network or hardware; a disposable database is recreated for each run, so
 the suite is fully deterministic. The split between levels is physical: pure-logic
@@ -103,7 +106,8 @@ Table~\ref{tab:levels} summarises how the levels, their objectives, the dominant
 design-technique family, and the suites that populate them line up. The three
 following sections take each level in turn; in their test-case tables the
 \emph{Status} column records the outcome of the most recent run --- all
-\textbf{67 tests pass}.
+\textbf{67 functional tests pass} (the 3 open-defect tests of
+Table~\ref{tab:open-defects} currently fail).
 
 \begin{table}[htbp]
 \centering
@@ -439,12 +443,12 @@ ST-32 \texttt{dismiss\_suppresses} & POST dismiss, then re-analyse & suppressed 
 
 \subsection*{Negative tests that reveal open defects}
 
-Beyond the passing acceptance suite, the team keeps a small set of \emph{negative}
-black-box tests that are deliberately left \textbf{failing}: each asserts the
-behaviour the system \emph{should} exhibit on an awkward input, and so records an
-open defect as an executable to-do until it is fixed. Table~\ref{tab:open-defects}
-lists three, designed with the same black-box techniques and reported separately
-from the 67 passing cases (they are not counted in the acceptance total).
+No system of this scope is defect-free, and the suite is thorough enough to surface
+real gaps rather than hide them. Table~\ref{tab:open-defects} lists three
+\emph{negative} black-box tests that \textbf{currently fail}: each asserts the
+behaviour the system \emph{should} exhibit on an awkward input but does not yet, so it
+pins down a genuine open defect as an executable to-do. They are designed with the
+same black-box techniques and are part of the 70-test total (67 pass, these 3 fail).
 
 \begin{table}[htbp]
 \centering
@@ -470,16 +474,17 @@ is wanted. KI-2 takes a value just past the upper boundary of the hour-of-day do
 the malformed time is currently accepted and only fails later when the scheduler
 evaluates it. KI-3 is a \emph{decision} over three conditions (same device $\wedge$
 same time window $\wedge$ same action $\Rightarrow$ duplicate); the duplicate is
-currently created silently. Each test is red today and turns green once the
-corresponding validation is added.
+currently created silently. Each test is red today because of a real defect and will
+turn green once the corresponding validation is added.
 
 \section{Results and Traceability}
 \label{sec:qa-results}
 
-The acceptance suite passes in full: \textbf{67 tests, 67 passed}, as recorded in the
-\emph{Status} column of the unit, integration and system tables above; the three
-negative tests of Table~\ref{tab:open-defects} are deliberate, separately-tracked
-failures and are excluded from that total. Because tests are derived from the
+The run totals \textbf{70 tests: 67 passed and 3 failed}. The 67 functional unit,
+integration and system tests all pass (the \emph{Status} column of every other table
+above); the 3 failures are the open-defect tests of Table~\ref{tab:open-defects},
+which expose real bugs the team has found but not yet fixed and records transparently
+rather than hiding. Because tests are derived from the
 specification, every requirement family is traceable to at least one executable
 check, and conversely every test traces back to a requirement.
 \emph{Acceptance testing} re-runs this same system suite against the demonstration
