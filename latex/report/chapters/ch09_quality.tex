@@ -389,16 +389,19 @@ from active to accepted or dismissed, and a unit from occupied to vacant). The
 technique used for each case is given in the last column of
 Table~\ref{tab:sys-cases}.
 
-\begin{table}[htbp]
-\centering
+{\footnotesize
+\begin{xltabular}{\textwidth}{@{}L{0.225\textwidth} X X c L{0.06\textwidth}@{}}
 \caption{System-level test cases (suites \texttt{auth\_rbac}, \texttt{admin},
 \texttt{monitoring}, \texttt{savings}, \texttt{recommendations}); black-box. All pass.}
-\label{tab:sys-cases}
-{\footnotesize
-\begin{tabularx}{\textwidth}{@{}L{0.225\textwidth} X X c L{0.06\textwidth}@{}}
+\label{tab:sys-cases}\\
 \toprule
 \textbf{Test case} & \textbf{Input} & \textbf{Expected output} & \textbf{Status} & \textbf{Technique} \\
 \midrule
+\endfirsthead
+\toprule
+\textbf{Test case} & \textbf{Input} & \textbf{Expected output} & \textbf{Status} & \textbf{Technique} \\
+\midrule
+\endhead
 ST-1 \texttt{login\_returns\_token\_and\_user} & valid credentials & 200 + token + user & Pass & EP \\
 ST-2 \texttt{login\_rejects\_bad\_password} & wrong password & 401 & Pass & EP \\
 ST-3 \texttt{unauthenticated\_is\_rejected} & request with no token & 401 & Pass & EP \\
@@ -432,14 +435,51 @@ ST-30 \texttt{recommendation\_provider\_swappable} & inject a fake provider & de
 ST-31 \texttt{accept\_becomes\_rule} & POST accept a recommendation & 201 rule; no longer active & Pass & State \\
 ST-32 \texttt{dismiss\_suppresses} & POST dismiss, then re-analyse & suppressed (not re-shown) & Pass & State \\
 \bottomrule
+\end{xltabular}}
+
+\subsection*{Negative tests that reveal open defects}
+
+Beyond the passing acceptance suite, the team keeps a small set of \emph{negative}
+black-box tests that are deliberately left \textbf{failing}: each asserts the
+behaviour the system \emph{should} exhibit on an awkward input, and so records an
+open defect as an executable to-do until it is fixed. Table~\ref{tab:open-defects}
+lists three, designed with the same black-box techniques and reported separately
+from the 67 passing cases (they are not counted in the acceptance total).
+
+\begin{table}[htbp]
+\centering
+\caption{Open-defect tests (negative, currently failing). Suite \texttt{known\_issues}.}
+\label{tab:open-defects}
+{\footnotesize
+\begin{tabularx}{\textwidth}{@{}L{0.225\textwidth} X X c L{0.06\textwidth}@{}}
+\toprule
+\textbf{Test case} & \textbf{Input} & \textbf{Expected output} & \textbf{Status} & \textbf{Technique} \\
+\midrule
+KI-1 \texttt{blank\_rule\_name} & create a rule with name \texttt{""} & accepted with a default name (or a soft warning), not a hard 422 & \textbf{Fail} & EP \\
+KI-2 \texttt{malformed\_time\_window} & rule \textsc{when} between \texttt{["25:00","26:00"]} & rejected at validation (422) with a clear message & \textbf{Fail} & BVA \\
+KI-3 \texttt{duplicate\_identical\_rule} & a second rule identical to an existing one (same device, window, action) & flagged as a duplicate & \textbf{Fail} & Decision \\
+\bottomrule
 \end{tabularx}}
 \end{table}
+
+KI-1 partitions the rule-name input into a valid (non-empty) and an invalid (empty)
+class and exercises the latter (\emph{equivalence partitioning}); the system
+currently returns a hard \texttt{422} where a default name or a non-blocking warning
+is wanted. KI-2 takes a value just past the upper boundary of the hour-of-day domain
+($23{:}59$ valid, $24{:}00$ and beyond invalid --- \emph{boundary-value analysis});
+the malformed time is currently accepted and only fails later when the scheduler
+evaluates it. KI-3 is a \emph{decision} over three conditions (same device $\wedge$
+same time window $\wedge$ same action $\Rightarrow$ duplicate); the duplicate is
+currently created silently. Each test is red today and turns green once the
+corresponding validation is added.
 
 \section{Results and Traceability}
 \label{sec:qa-results}
 
-The full suite passes: \textbf{67 tests, 67 passed}, as recorded in the
-\emph{Status} column of every table above. Because tests are derived from the
+The acceptance suite passes in full: \textbf{67 tests, 67 passed}, as recorded in the
+\emph{Status} column of the unit, integration and system tables above; the three
+negative tests of Table~\ref{tab:open-defects} are deliberate, separately-tracked
+failures and are excluded from that total. Because tests are derived from the
 specification, every requirement family is traceable to at least one executable
 check, and conversely every test traces back to a requirement.
 \emph{Acceptance testing} re-runs this same system suite against the demonstration
