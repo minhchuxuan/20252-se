@@ -4,15 +4,34 @@
 import { useEffect, useState, useCallback } from "react";
 import { api } from "../api/client";
 import { BAN, Loading, Empty, Pill, Modal } from "../components/ui";
-import { vnd, kwh, watts, deviceIcon, deviceColor } from "../lib/format";
+import { Icon } from "../components/icons";
+import { useAuth } from "../auth/AuthContext";
+import { vnd, kwh, watts, deviceIconName, deviceColor } from "../lib/format";
 
 export default function Building() {
+  const { toast } = useAuth();
   const [ov, setOv] = useState(null);
   const [unit, setUnit] = useState(null); // {home_id, unit_name} being drilled into
 
   const load = useCallback(() => {
     api.buildingOverview().then(setOv).catch(() => {});
   }, []);
+
+  // Soft offboard: deactivates + detaches the resident; the unit goes vacant but keeps
+  // its devices and history. Destructive to access, so confirm first.
+  const removeResident = async (u) => {
+    if (!window.confirm(
+      `Remove ${u.resident_name} from ${u.unit_name}?\n\n` +
+      "The unit becomes vacant; its devices and billing history are kept."
+    )) return;
+    try {
+      await api.offboardResident(u.home_id);
+      toast(`${u.unit_name} is now vacant`, "ok");
+      load();
+    } catch (err) {
+      toast(err.message || "Could not remove resident", "err");
+    }
+  };
 
   useEffect(() => {
     load();
@@ -25,14 +44,14 @@ export default function Building() {
   return (
     <div className="stack" style={{ gap: 20 }}>
       <div className="grid cols-4">
-        <BAN label="Units" value={ov.unit_count} accent="blue" icon="🏢" sub="In this building" />
-        <BAN label="Residents" value={ov.resident_count} accent="purple" icon="👥" sub="Onboarded tenants" />
-        <BAN label="Live load" value={watts(ov.total_w)} accent="orange" icon="⚡" sub="All units combined" />
+        <BAN label="Units" value={ov.unit_count} accent="blue" icon={<Icon name="building" size={20} />} sub="In this building" />
+        <BAN label="Residents" value={ov.resident_count} accent="purple" icon={<Icon name="users" size={20} />} sub="Onboarded tenants" />
+        <BAN label="Live load" value={watts(ov.total_w)} accent="orange" icon={<Icon name="bolt" size={20} />} sub="All units combined" />
         <BAN
           label="Projected bill"
           value={vnd(ov.estimated_bill_vnd)}
           accent="green"
-          icon="🧾"
+          icon={<Icon name="receipt" size={20} />}
           sub="This cycle, all units"
         />
       </div>
@@ -64,7 +83,7 @@ export default function Building() {
                   <Metric label="kWh cycle" value={kwh(u.kwh_cycle, 1)} />
                   <Metric label="Bill" value={vnd(u.estimated_bill_vnd)} />
                   <Pill kind={u.online_devices === u.total_devices ? "green" : "orange"}>
-                    {u.online_devices}/{u.total_devices} online
+                    {u.online_devices}/{u.total_devices} reachable
                   </Pill>
                   <button
                     className="btn btn-sm"
@@ -72,6 +91,11 @@ export default function Building() {
                   >
                     View
                   </button>
+                  {u.resident_email && (
+                    <button className="btn btn-sm btn-ghost" onClick={() => removeResident(u)}>
+                      Remove
+                    </button>
+                  )}
                 </div>
               </div>
             ))}
@@ -111,9 +135,9 @@ function UnitModal({ unit, onClose }) {
       ) : (
         <div className="stack" style={{ gap: 14 }}>
           <div className="grid cols-3">
-            <BAN label="Live load" value={watts(dash.home_total_w)} accent="orange" icon="⚡" />
-            <BAN label="kWh today" value={kwh(dash.kwh_today, 1)} accent="blue" icon="📊" />
-            <BAN label="Bill (cycle)" value={vnd(dash.estimated_bill_vnd)} accent="green" icon="🧾" />
+            <BAN label="Live load" value={watts(dash.home_total_w)} accent="orange" icon={<Icon name="bolt" size={20} />} />
+            <BAN label="kWh today" value={kwh(dash.kwh_today, 1)} accent="blue" icon={<Icon name="activity" size={20} />} />
+            <BAN label="Bill (cycle)" value={vnd(dash.estimated_bill_vnd)} accent="green" icon={<Icon name="receipt" size={20} />} />
           </div>
           <div className="stack" style={{ gap: 8 }}>
             {devices.map((d) => (
@@ -121,7 +145,7 @@ function UnitModal({ unit, onClose }) {
                 padding: "8px 12px", borderRadius: 10, background: "var(--c-surface-2)",
               }}>
                 <div className="row" style={{ gap: 10 }}>
-                  <span style={{ fontSize: 18 }}>{deviceIcon(d.type)}</span>
+                  <Icon name={deviceIconName(d.type)} size={18} />
                   <div>
                     <div style={{ fontWeight: 600, fontSize: 13.5 }}>{d.name}</div>
                     <div className="muted" style={{ fontSize: 11.5, color: deviceColor(d.type) }}>
@@ -129,7 +153,7 @@ function UnitModal({ unit, onClose }) {
                     </div>
                   </div>
                 </div>
-                <Pill kind={d.online ? "green" : "gray"}>{d.online ? "online" : "offline"}</Pill>
+                <Pill kind={d.online ? "green" : "gray"}>{d.online ? "reachable" : "unreachable"}</Pill>
               </div>
             ))}
           </div>

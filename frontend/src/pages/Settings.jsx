@@ -4,6 +4,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { api } from "../api/client";
 import { BAN, Pill, Modal, Loading, Empty } from "../components/ui";
+import { Icon } from "../components/icons";
 import { vnd } from "../lib/format";
 import { useAuth } from "../auth/AuthContext";
 
@@ -84,28 +85,28 @@ export default function Settings() {
           label={settings.home_id == null ? "Building" : "Unit"}
           value={settings.home_name}
           accent="blue"
-          icon="🏠"
+          icon={<Icon name="home" size={20} />}
           sub={settings.home_id == null ? "All units (building owner)" : `Unit #${settings.home_id}`}
         />
         <BAN
           label="Billing cycle day"
           value={settings.billing_cycle_day}
           accent="orange"
-          icon="📅"
+          icon={<Icon name="calendar" size={20} />}
           sub="Day of month meter resets"
         />
         <BAN
           label="Currency"
           value={settings.currency}
           accent="green"
-          icon="💱"
+          icon={<Icon name="currency" size={20} />}
           sub={`Locale ${settings.locale}`}
         />
         <BAN
           label="Active tariff"
           value={activeTariff ? activeTariff.name : "None"}
           accent="red"
-          icon="🧾"
+          icon={<Icon name="receipt" size={20} />}
           sub={activeTariff ? TARIFF_TYPE_LABEL[activeTariff.type] || activeTariff.type : "No tariff set"}
         />
       </div>
@@ -124,9 +125,9 @@ export default function Settings() {
           <div className="row" style={{ gap: 14 }}>
             <div
               className="ban-ico"
-              style={{ background: "rgba(0,114,178,.12)", marginBottom: 0, fontSize: 18 }}
+              style={{ background: "rgba(0,114,178,.12)", marginBottom: 0 }}
             >
-              👤
+              <Icon name="user" size={20} />
             </div>
             <div>
               <div style={{ fontWeight: 700, fontSize: 15 }}>{user?.full_name}</div>

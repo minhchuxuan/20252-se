@@ -5,7 +5,7 @@ Administrator monitors every unit and manages the building tariff/residents, but
 never operates a resident's devices (least privilege)."""
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
 from ..database import get_db
@@ -39,3 +39,9 @@ def unit_devices(home_id: int, admin: User = Depends(require_admin), db: Session
     """View a single unit's devices (read-only drill-in)."""
     AdminService(db).unit_or_404(home_id)
     return DeviceService(db).list_for_home(home_id)
+
+
+@router.delete("/units/{home_id}/resident", status_code=status.HTTP_204_NO_CONTENT)
+def offboard_resident(home_id: int, admin: User = Depends(require_admin), db: Session = Depends(get_db)):
+    """Remove a unit's resident (soft offboard: unit goes vacant, devices/history kept)."""
+    AdminService(db).offboard_resident(home_id)

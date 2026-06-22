@@ -30,7 +30,7 @@ are:
         behaviour change and financial outcome.
 \end{itemize}
 
-The system is fully implemented and verified: \textbf{61 automated tests} (unit,
+The system is fully implemented and verified: \textbf{64 automated tests} (unit,
 integration, system, and acceptance levels) pass against the current codebase,
 and all functional requirement families listed in the SRS are represented in the
 test suite's traceability matrix.
@@ -53,7 +53,7 @@ post-hoc validation that the estimate was meaningful.
 
 Table~\ref{tab:req-satisfaction} maps each functional requirement family to its
 implementation.  Collectively, these families are exercised by the suite of
-61 automated tests, whose per-requirement traceability is detailed in the
+64 automated tests, whose per-requirement traceability is detailed in the
 appendix.
 
 \begin{table}[htbp]
@@ -173,6 +173,18 @@ demonstrate through a single design-and-build deliverable.
         cross-unit IDOR vulnerability and an unvalidated rule-update path that
         had survived all prior testing.  Both findings were patched and
         regression-tested before the final submission.
+
+  \item \textbf{Oversight is not the same as surveillance --- data minimisation is a design decision.}
+        When the building owner gained a building-wide overview, the natural
+        instinct was to surface, per unit, how many devices were switched on.  We
+        rejected that: a live per-unit count of running appliances would expose a
+        resident's occupancy and behaviour to their landlord.  Applying
+        \emph{data minimisation} (\req{NFR-SEC-5}), the overview discloses only
+        aggregate load, energy, and bill --- the data the owner legitimately needs
+        for billing --- plus device \emph{reachability} (an operational, non-behavioural
+        signal), and never per-device on/off state.  Naming the privacy purpose
+        turned an ambiguous label (``online'') into a deliberate, defensible one
+        (``reachable'').
 
   \item \textbf{Client elicitation must be documented, not recalled.}
         The highest-priority acceptance criterion --- VND savings visibility ---

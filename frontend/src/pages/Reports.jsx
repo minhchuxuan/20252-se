@@ -7,9 +7,10 @@ import {
 } from "recharts";
 import { api, downloadCsv } from "../api/client";
 import { BAN, Pill, Loading, Empty } from "../components/ui";
+import { Icon } from "../components/icons";
 import { useAuth } from "../auth/AuthContext";
 import {
-  vnd, vndShort, kwh, fmtDateTime, deviceColor, deviceIcon, OKABE_ITO,
+  vnd, vndShort, kwh, fmtDateTime, deviceColor, deviceIconName, OKABE_ITO,
 } from "../lib/format";
 
 const RANGES = [
@@ -130,21 +131,21 @@ export default function Reports() {
           value={(series?.total_kwh ?? 0).toFixed(1)}
           unit="kWh"
           accent="blue"
-          icon="🔋"
+          icon={<Icon name="battery" size={20} />}
           sub={`over the selected ${range}`}
         />
         <BAN
           label="Cost"
           value={vndShort(series?.total_cost_vnd ?? 0)}
           accent="red"
-          icon="🧾"
+          icon={<Icon name="receipt" size={20} />}
           sub={`${vnd(series?.total_cost_vnd ?? 0)} total`}
         />
         <BAN
           label="Saved this cycle"
           value={vndShort(summary?.saved_vnd_cycle ?? 0)}
           accent="green"
-          icon="💰"
+          icon={<Icon name="wallet" size={20} />}
           sub={summary ? `${kwh(summary.saved_kwh_cycle, 1)} avoided` : "—"}
         />
       </div>
@@ -198,7 +199,7 @@ export default function Reports() {
               {top.map((t) => (
                 <div key={t.device_id}>
                   <div className="between" style={{ fontSize: 13.5, marginBottom: 5 }}>
-                    <span style={{ fontWeight: 600 }}>{deviceIcon(t.type)} {t.name}</span>
+                    <span className="row" style={{ fontWeight: 600, gap: 7 }}><Icon name={deviceIconName(t.type)} size={15} />{t.name}</span>
                     <span className="tabular muted">
                       {kwh(t.kwh, 2)} · {vndShort(t.cost_vnd)}
                     </span>
@@ -290,7 +291,7 @@ export default function Reports() {
         </div>
         <div className="grid cols-3">
           <div className="card" style={{ padding: 16, boxShadow: "none", background: "var(--c-surface-2)" }}>
-            <div style={{ fontWeight: 700, fontSize: 14 }}>📈 Readings</div>
+            <div className="row" style={{ fontWeight: 700, fontSize: 14, gap: 8 }}><Icon name="trending" size={16} />Readings</div>
             <div className="muted" style={{ fontSize: 12.5, margin: "5px 0 12px" }}>
               Raw device readings, last 30 days.
             </div>
@@ -304,7 +305,7 @@ export default function Reports() {
           </div>
 
           <div className="card" style={{ padding: 16, boxShadow: "none", background: "var(--c-surface-2)" }}>
-            <div style={{ fontWeight: 700, fontSize: 14 }}>⚙️ Automation rules</div>
+            <div className="row" style={{ fontWeight: 700, fontSize: 14, gap: 8 }}><Icon name="sliders" size={16} />Automation rules</div>
             <div className="muted" style={{ fontSize: 12.5, margin: "5px 0 12px" }}>
               All saving & automation rules.
             </div>
@@ -318,7 +319,7 @@ export default function Reports() {
           </div>
 
           <div className="card" style={{ padding: 16, boxShadow: "none", background: "var(--c-surface-2)" }}>
-            <div style={{ fontWeight: 700, fontSize: 14 }}>💰 Savings</div>
+            <div className="row" style={{ fontWeight: 700, fontSize: 14, gap: 8 }}><Icon name="wallet" size={16} />Savings</div>
             <div className="muted" style={{ fontSize: 12.5, margin: "5px 0 12px" }}>
               Measured & estimated savings ledger.
             </div>

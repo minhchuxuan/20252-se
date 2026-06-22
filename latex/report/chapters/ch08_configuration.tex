@@ -4,7 +4,7 @@ This chapter documents the Software Configuration Management (SCM) plan for the
 AI-Driven Smart Home Energy Optimizer (SHEO) project. SCM encompasses the
 principles, techniques, and tools used to identify, control, record, and audit
 changes to every work product throughout the project lifecycle. The chapter is
-organised around the five canonical SCM tasks drawn from \textbf{IEEE~828} and
+organised around the five canonical SCM tasks drawn from \textbf{IEEE~828}~\cite{ieee828} and
 \textbf{IEEE~1042}: configuration identification, version control, change control,
 configuration audit, and status reporting.
 
@@ -106,7 +106,7 @@ C4 & Frontend source
    & The client application root, its page and component modules, and its authentication and supporting library code
    & Frontend developers \\[4pt]
 C5 & Test suite
-   & The shared test fixtures and the eight automated test modules comprising fifty-four cases
+   & The shared test fixtures and the nine automated test modules comprising sixty-four cases
    & QA lead \\[4pt]
 C6 & Build \& dependency manifests
    & The backend and client dependency and build manifests, with all versions pinned
@@ -179,7 +179,7 @@ M2 --- Design \& skeleton
 M3 --- Implementation
   & M3
   & C3 (the complete backend services), C4 (all client pages and components), C5 (the full test suite), C7 (all thresholds wired)
-  & All fifty-four automated tests pass; the demonstration seeds twenty-one days of data and the application runs end-to-end \\[6pt]
+  & All sixty-four automated tests pass; the demonstration seeds twenty-one days of data and the application runs end-to-end \\[6pt]
 M4 --- Release / submission
   & M4
   & The entire project: C1--C7 consistent end-to-end; the traceability matrix complete; this configuration management plan
@@ -219,7 +219,7 @@ where the integration branch must remain continuously releasable.
 \begin{description}[leftmargin=1.6cm, style=nextline]
   \item[Integration line]
     The sole long-lived line of development. It must always be buildable and pass
-    the full suite of fifty-four automated tests. Changes are never applied to it
+    the full suite of sixty-four automated tests. Changes are never applied to it
     directly; they arrive exclusively through reviewed merge proposals.
   \item[Feature branch]
     A short-lived line of work that diverges from the integration line for each
@@ -332,7 +332,7 @@ verifying correctness, adherence to the three-tier layered architecture, and tha
 every change is traceable to an approved requirement. Self-merges are not permitted.
 
 \textbf{Stage~3: Test Gate, Merge, and Release.}
-The full automated test suite of fifty-four cases must pass on the branch before
+The full automated test suite of sixty-four cases must pass on the branch before
 merge. This is the non-negotiable merge gate. On passing, the branch is merged into
 the integration line and then discarded. If the merged change completes a milestone,
 the configuration manager establishes the corresponding annotated baseline marker

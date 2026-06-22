@@ -10,6 +10,9 @@ venv/
 # Database (regenerated on first run via the seed)
 *.db
 *.db.*
+*.db-journal
+*.db-shm
+*.db-wal
 *.sqlite3
 
 # Node / frontend

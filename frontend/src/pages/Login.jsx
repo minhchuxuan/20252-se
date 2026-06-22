@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "../auth/AuthContext";
+import { Icon } from "../components/icons";
 
 export default function Login() {
   const { login, register, toast } = useAuth();
@@ -25,7 +26,7 @@ export default function Login() {
     <div className="login-wrap">
       <form className="login-card" onSubmit={submit}>
         <div className="brand" style={{ paddingBottom: 8 }}>
-          <div className="brand-logo">⚡</div>
+          <div className="brand-logo"><Icon name="bolt" size={20} style={{ color: "#fff" }} /></div>
           <div className="brand-name" style={{ color: "var(--c-text)" }}>
             Energy Optimizer<small style={{ color: "var(--c-text-soft)" }}>AI-Driven Smart Home</small>
           </div>

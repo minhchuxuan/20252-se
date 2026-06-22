@@ -4,21 +4,22 @@ import { useAuth } from "../auth/AuthContext";
 import { api } from "../api/client";
 import { useLiveFeed } from "../api/ws";
 import { fmtDateTime } from "../lib/format";
+import { Icon } from "./icons";
 
 // The Administrator (building owner) oversees the whole building; residents and
 // developers work within their own unit. The nav reflects each role's pages.
 const ADMIN_NAV = [
-  { to: "/", label: "Building", ico: "🏢", end: true },
-  { to: "/settings", label: "Settings", ico: "🛠️" },
+  { to: "/", label: "Building", ico: "building", end: true },
+  { to: "/settings", label: "Settings", ico: "settings" },
 ];
 
 const UNIT_NAV = [
-  { to: "/", label: "Dashboard", ico: "📊", end: true },
-  { to: "/devices", label: "Devices", ico: "🔌" },
-  { to: "/rules", label: "Rules & Automation", ico: "⚙️" },
-  { to: "/recommendations", label: "Recommendations", ico: "💡" },
-  { to: "/reports", label: "Reports", ico: "📈" },
-  { to: "/settings", label: "Settings", ico: "🛠️" },
+  { to: "/", label: "Dashboard", ico: "gauge", end: true },
+  { to: "/devices", label: "Devices", ico: "plug" },
+  { to: "/rules", label: "Rules & Automation", ico: "sliders" },
+  { to: "/recommendations", label: "Recommendations", ico: "bulb" },
+  { to: "/reports", label: "Reports", ico: "trending" },
+  { to: "/settings", label: "Settings", ico: "settings" },
 ];
 
 const TITLES = {
@@ -65,7 +66,7 @@ export default function Layout({ children }) {
     <div className="app-shell">
       <aside className="sidebar">
         <div className="brand">
-          <div className="brand-logo">⚡</div>
+          <div className="brand-logo"><Icon name="bolt" size={20} style={{ color: "#fff" }} /></div>
           <div className="brand-name">
             Energy Optimizer<small>Smart Home</small>
           </div>
@@ -73,7 +74,7 @@ export default function Layout({ children }) {
         <nav className="nav">
           {NAV.map((n) => (
             <NavLink key={n.to} to={n.to} end={n.end} className={({ isActive }) => (isActive ? "active" : "")}>
-              <span className="ico">{n.ico}</span>
+              <span className="ico"><Icon name={n.ico} /></span>
               {n.label}
             </NavLink>
           ))}
@@ -93,8 +94,8 @@ export default function Layout({ children }) {
           </div>
           <div className="row" style={{ gap: 16 }}>
             <div style={{ position: "relative" }}>
-              <button className="btn btn-ghost" onClick={() => setOpen((o) => !o)} aria-label="Notifications">
-                🔔{unread > 0 && <span className="pill pill-red" style={{ marginLeft: 6 }}>{unread}</span>}
+              <button className="btn btn-ghost row" style={{ gap: 6 }} onClick={() => setOpen((o) => !o)} aria-label="Notifications">
+                <Icon name="bell" />{unread > 0 && <span className="pill pill-red">{unread}</span>}
               </button>
               {open && (
                 <div className="card" style={{ position: "absolute", right: 0, top: 46, width: 340, zIndex: 20, padding: 12 }}>

@@ -66,6 +66,7 @@ export const api = {
   buildingOverview: () => get("/admin/overview"),
   unitDashboard: (homeId) => get(`/admin/units/${homeId}/dashboard`),
   unitDevices: (homeId) => get(`/admin/units/${homeId}/devices`),
+  offboardResident: (homeId) => del(`/admin/units/${homeId}/resident`),
 
   // monitoring
   dashboard: () => get("/dashboard"),

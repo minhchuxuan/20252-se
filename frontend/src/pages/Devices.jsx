@@ -8,7 +8,8 @@ import { api } from "../api/client";
 import { BAN, Pill, Modal, Loading, Empty } from "../components/ui";
 import DeviceControl from "../components/DeviceControl";
 import { useAuth } from "../auth/AuthContext";
-import { vndShort, kwh, watts, deviceColor, deviceIcon, fmtDateTime } from "../lib/format";
+import { vndShort, kwh, watts, deviceColor, deviceIconName, fmtDateTime } from "../lib/format";
+import { Icon } from "../components/icons";
 
 // A device's instantaneous power lives in state.power_w; sensors report temp/occupancy.
 const powerOf = (d) => Number((d.state && d.state.power_w) || 0);
@@ -75,14 +76,14 @@ export default function Devices() {
   return (
     <div className="stack" style={{ gap: 20 }}>
       <div className="grid cols-4">
-        <BAN label="Devices" value={devices.length} accent="blue" icon="🧩"
+        <BAN label="Devices" value={devices.length} accent="blue" icon={<Icon name="puzzle" size={20} />}
           sub={`${controllable.length} controllable · ${devices.length - controllable.length} sensors`} />
-        <BAN label="Online now" value={online} accent="green" icon="📶"
+        <BAN label="Online now" value={online} accent="green" icon={<Icon name="signal" size={20} />}
           sub={`${devices.length - online} offline`} />
-        <BAN label="Live power" value={Math.round(liveTotal)} unit="W" accent="orange" icon="⚡"
+        <BAN label="Live power" value={Math.round(liveTotal)} unit="W" accent="orange" icon={<Icon name="bolt" size={20} />}
           sub="Across online devices" />
         <BAN label="Safety-critical" value={devices.filter((d) => d.safety_critical).length}
-          accent="red" icon="🛡️" sub="Protected from auto power-off" />
+          accent="red" icon={<Icon name="shield" size={20} />} sub="Protected from auto power-off" />
       </div>
 
       <div className="card">
@@ -157,7 +158,7 @@ function DeviceCard({ device, canManage, onControl, onToggle, onDelete }) {
     <div className="card" style={{ padding: 16, boxShadow: "none", background: "var(--c-surface-2)" }}>
       <div className="between">
         <span className="row" style={{ gap: 8 }}>
-          <span style={{ fontSize: 22 }}>{deviceIcon(d.type)}</span>
+          <Icon name={deviceIconName(d.type)} size={22} />
           <span className="stack" style={{ gap: 2 }}>
             <span style={{ fontWeight: 700, fontSize: 14.5, lineHeight: 1.1 }}>{d.name}</span>
             <span className="muted" style={{ fontSize: 12 }}>{d.room}</span>
@@ -268,7 +269,7 @@ function ControlModal({ device, onClose, onFresh, toast }) {
     <Modal title={device.name} onClose={onClose} width={560}>
       <div className="between" style={{ marginBottom: 4 }}>
         <span className="row" style={{ gap: 8 }}>
-          <span style={{ fontSize: 20 }}>{deviceIcon(device.type)}</span>
+          <Icon name={deviceIconName(device.type)} size={20} />
           <span className="muted" style={{ fontSize: 13 }}>{device.room}</span>
         </span>
         <span className="row" style={{ gap: 6, fontSize: 12 }}>
@@ -438,7 +439,7 @@ function AddDeviceModal({ onClose, onAdded, toast }) {
                     }}
                   >
                     <div className="row" style={{ gap: 8 }}>
-                      <span style={{ fontSize: 20 }}>{deviceIcon(p.type)}</span>
+                      <Icon name={deviceIconName(p.type)} size={20} />
                       <span style={{ fontWeight: 700, fontSize: 13.5 }}>{p.display_name}</span>
                     </div>
                     <div className="muted tabular" style={{ fontSize: 11.5, marginTop: 6 }}>

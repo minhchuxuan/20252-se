@@ -14,7 +14,7 @@ acceptance-tested.
 \label{sec:req-process}
 
 Lecture C06 frames requirements engineering as a five-step pipeline whose output is a
-Software Requirements Specification (SRS). SHEO followed this pipeline faithfully:
+Software Requirements Specification (SRS)~\cite{ieee29148}. SHEO followed this pipeline faithfully:
 
 \begin{enumerate}
   \item \textbf{Feasibility study.} Before committing, the team checked that the
@@ -211,6 +211,7 @@ record them.
 \req{NFR-SEC-2} & Product (security) & The system shall enforce authentication and role-based access control. & H\\
 \req{NFR-SEC-3} & Product (security) & No password or token shall be stored in plaintext. & H\\
 \req{NFR-SEC-4} & Product (security) & Access to readings and logs shall be scoped to the user's own unit; the Administrator may view every unit in the building. & H\\
+\req{NFR-SEC-5} & Product (security) & The building overview shall disclose only aggregate per-unit metrics (live load, energy, bill) and device \emph{reachability}, never a resident's per-device on/off state --- data minimisation, so oversight does not become behavioural surveillance. & M\\
 \bottomrule
 \end{tabularx}
 \end{table}
@@ -224,7 +225,7 @@ record them.
 \toprule
 \textbf{ID} & \textbf{Business rule} & \textbf{Pri.}\\
 \midrule
-\req{BR-1} & Only the Administrator (building owner) may onboard residents by selling them a unit, which is provisioned with its default device package; a Resident cannot add or remove devices. & H\\
+\req{BR-1} & Only the Administrator (building owner) may onboard a resident by selling them a unit (provisioned with its default device package) or offboard a resident, after which the unit becomes vacant while its devices and billing history are retained; a Resident cannot add or remove devices. & H\\
 \req{BR-2} & A recommendation remains advisory and has no effect until it is explicitly accepted. & H\\
 \req{BR-3} & Automatic action is disabled by default; the user must opt in per rule. & H\\
 \req{BR-4} & Deleting a rule shall preserve its execution history. & H\\
@@ -246,7 +247,7 @@ system as a single black box used by a small set of external actors. In keeping 
 the C06 convention, each actor is named with a \emph{singular role noun} (not an
 individual or a job title), and each use case is named \emph{verb + noun}.
 
-\fig{fig04-use-case.png}{Use-case model. The deployment models one apartment building. The Administrator (building owner) monitors a building overview across every unit, configures the building-wide tariff, and onboards residents by selling them a unit --- but never manually operates a unit's devices and authors no automation rules; the Resident operates only their own unit's devices and may author rules and accept recommendations for that unit; the Developer/Tester exercises mock devices on a maintenance unit; the System Scheduler autonomously fires rules and mines habits. The Client (IoT contractor) and Customer (building management) are business stakeholders outside the boundary --- the Customer operates the system \emph{as} the Administrator. Accepting a recommendation $\langle\langle$include$\rangle\rangle$ authoring a rule, which in turn $\langle\langle$include$\rangle\rangle$ command validation and a VND estimate.}{fig:usecase}
+\fig{fig04-use-case.png}{Use-case model. The deployment models one apartment building. The Administrator (building owner) monitors a building overview across every unit, configures the building-wide tariff, and onboards or offboards residents by selling a unit or returning it to vacant --- but never manually operates a unit's devices and authors no automation rules; the Resident operates only their own unit's devices and may author rules and accept recommendations for that unit; the Developer/Tester exercises mock devices on a maintenance unit; the System Scheduler autonomously fires rules and mines habits. The Client (IoT contractor) and Customer (building management) are business stakeholders outside the boundary --- the Customer operates the system \emph{as} the Administrator. Accepting a recommendation $\langle\langle$include$\rangle\rangle$ authoring a rule, which in turn $\langle\langle$include$\rangle\rangle$ command validation and a VND estimate.}{fig:usecase}
 
 The model has four actors:
 
@@ -254,8 +255,9 @@ The model has four actors:
   \item \textbf{Administrator} --- the building owner, realised by the customer (building
   management). Owns no unit and never operates individual devices: monitors a read-only
   building overview across all units (resident roster, per-unit usage, building totals),
-  configures the building-wide tariff, and onboards residents by selling them a unit
-  (provisioned with its default device package).
+  configures the building-wide tariff, onboards residents by selling them a unit
+  (provisioned with its default device package), and offboards a resident --- a soft
+  removal that returns the unit to vacant while retaining its devices and history.
   \item \textbf{Resident} --- the primary end-user (a tenant of one unit). Views their own
   unit's consumption and savings, controls every operable device in that unit, and may
   author automation rules and accept or dismiss recommendations for it; no other unit is

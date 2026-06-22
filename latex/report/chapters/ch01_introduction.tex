@@ -35,10 +35,10 @@ end-to-end.
 
 SHEO is, before anything else, an exercise in software engineering, and the report is
 structured to make that discipline visible. The course adopts the canonical definition
-introduced in Lecture C01 (\emph{Overview of Software Engineering}): software
+introduced in Lecture C01~\cite{c01-09} (\emph{Overview of Software Engineering}): software
 engineering is the body of \emph{methodologies, techniques, and tools} integrated into
 the software production and operation process in order to create software \emph{of the
-desired quality}. The same lecture frames software engineering as a layered activity:
+desired quality}. The same lecture frames software engineering as a layered activity~\cite{pressman, sommerville}:
 a foundational \emph{quality focus} supports a \emph{process}, which is enacted through
 \emph{methods}, which are in turn supported by \emph{tools}. This report is organised
 along exactly that layering---the process and management chapters establish the process
@@ -73,7 +73,8 @@ priorities but does not itself operate the running system; it is therefore a
 and runs it for a single apartment building; in the running system the Customer is realised as the
 \textbf{Administrator} actor, who owns no unit of their own but oversees every unit---viewing
 the resident roster, each unit's live power and usage, and the building totals---sells and
-onboards units to residents, and sets the building-wide tariff and billing cycle. The
+onboards units to residents (and may offboard a resident, returning the unit to vacant while
+keeping its devices and history), and sets the building-wide tariff and billing cycle. The
 Administrator never operates a unit's devices and authors no automation rules. The
 \textbf{End-users} are the \textbf{Residents} (tenants), each occupying one unit, who view
 their own unit's consumption and savings, control the operable devices in that unit, and

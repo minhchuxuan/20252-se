@@ -7,6 +7,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { api } from "../api/client";
 import { Modal, Loading, Empty, Pill } from "../components/ui";
+import { Icon } from "../components/icons";
 import { vnd, fmtDateTime } from "../lib/format";
 import { useAuth } from "../auth/AuthContext";
 
@@ -98,14 +99,14 @@ export default function Recommendations() {
           </div>
         </div>
         <button className="btn btn-primary" onClick={analyze} disabled={analyzing}>
-          {analyzing ? "Analyzing…" : "🔍 Analyze my usage"}
+          {analyzing ? "Analyzing…" : <span className="row" style={{ gap: 7 }}><Icon name="search" size={15} />Analyze my usage</span>}
         </button>
       </div>
 
       {recs.length === 0 ? (
         <div className="card">
           <Empty>
-            <div style={{ fontSize: 38, marginBottom: 10 }}>💡</div>
+            <div style={{ marginBottom: 10, color: "var(--c-text-soft)" }}><Icon name="bulb" size={38} style={{ margin: "0 auto" }} /></div>
             <div style={{ fontSize: 16, fontWeight: 700, color: "var(--c-text)" }}>
               No recommendations yet
             </div>
@@ -120,7 +121,7 @@ export default function Recommendations() {
               onClick={analyze}
               disabled={analyzing}
             >
-              {analyzing ? "Analyzing…" : "🔍 Analyze my usage"}
+              {analyzing ? "Analyzing…" : <span className="row" style={{ gap: 7 }}><Icon name="search" size={15} />Analyze my usage</span>}
             </button>
           </Empty>
         </div>
@@ -256,8 +257,8 @@ function RecCard({ rec, rank, busy, onAccept, onDismiss }) {
       )}
 
       {/* Data window used (REQ-4.4.2) */}
-      <div className="muted" style={{ fontSize: 12 }}>
-        📅 Based on data from {fmtDateTime(rec.data_window_start)} – {fmtDateTime(rec.data_window_end)}
+      <div className="muted row" style={{ fontSize: 12, gap: 6 }}>
+        <Icon name="calendar" size={13} />Based on data from {fmtDateTime(rec.data_window_start)} – {fmtDateTime(rec.data_window_end)}
       </div>
 
       <div className="row" style={{ gap: 10, marginTop: 2 }}>

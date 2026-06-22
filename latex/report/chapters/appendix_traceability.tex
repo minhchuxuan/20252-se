@@ -2,12 +2,12 @@
 \label{app:rtm}
 
 This appendix gives the consolidated requirements traceability matrix (RTM) for SHEO,
-linking each requirement to the design element that realises it and the automated test
-that verifies it. It supports both forward (requirement~$\rightarrow$~component~$\rightarrow$~test)
+linking each requirement to the design element that realises it and the activity that
+verifies it --- an automated test, or design inspection where noted. It supports both forward (requirement~$\rightarrow$~component~$\rightarrow$~test)
 and backward (test~$\rightarrow$~requirement) traceability. Policy thresholds (refresh
 interval, 60\,s offline, 14-day baseline, 7-day minimum history, five active
 recommendations, 30-day dismissal, two-minute undo, AC compressor interval, $\pm$20\%
-drift) are centralised in the system configuration module. The full suite is \textbf{61 automated tests,
+drift) are centralised in the system configuration module. The full suite is \textbf{64 automated tests,
 all passing}.
 
 \section{Functional requirements}
@@ -68,7 +68,8 @@ NFR-SAF-3 & Warn on temperature / unattended off & The rule-validation routine o
 NFR-SEC-2 & Authentication + RBAC & The authentication module, the administrator-authorisation guard and the building-overview service & Verifies that login succeeds with valid credentials and fails with invalid ones; that a resident-role user is prevented from adding a device and from reaching the Administrator's building overview; that the view-only Administrator (building owner) is forbidden from issuing a device-control command; and that a Resident may control only the operable devices of their own unit \\
 NFR-SEC-3 & No plaintext passwords & The salted password-hashing routine of the security module & Verifies that the stored credential is a salted hash and that the original plaintext is never stored or returned \\
 NFR-SEC-4 & Unit-scoped access to data & The unit-scoping filter of the device repository and the telemetry service & Rejection of a cross-unit device identifier: verifies that a Resident cannot retrieve consumption data for a device belonging to a different unit, while the Administrator may view every unit \\
-BR-1 & Only the Administrator sells units / onboards residents & The administrator-authorisation guard and the resident-onboarding endpoint of the authentication API & Verifies that a resident-role user cannot add a device, and that the Administrator can sell a unit --- provisioned with its default device package --- to a new Resident who then controls that unit but cannot reach another \\
+NFR-SEC-5 & Building-overview data minimisation & The building-overview aggregation service & By design inspection: the overview and unit drill-in expose only aggregate per-unit metrics (load, energy, bill) and device \emph{reachability} --- never a resident's per-device on/off state, so oversight cannot become behavioural surveillance \\
+BR-1 & Only the Administrator sells units / onboards \& offboards residents & The administrator-authorisation guard and the resident onboarding/offboarding endpoints of the authentication and admin APIs & Verifies that a resident-role user cannot add a device; that the Administrator can sell a unit --- provisioned with its default device package --- to a new Resident who then controls that unit but cannot reach another; and that offboarding soft-removes the resident (login disabled) while the unit, its devices and history are retained \\
 BR-2 & Recommendations advisory until accepted & The acceptance handler of the recommendation service & Verifies that a recommendation has no effect on automation until it is explicitly accepted by the user \\
 BR-3 & Auto-action disabled by default & The auto-apply field of the rule model & Verifies that a newly created rule has automated execution disabled by default \\
 BR-4 & Deleting a rule keeps execution history & The rule-execution record model, which retains history without cascading deletes & Verifies that execution log entries remain accessible after the parent rule is deleted \\

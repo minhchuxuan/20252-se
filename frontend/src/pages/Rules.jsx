@@ -6,11 +6,12 @@ import { api } from "../api/client";
 import { BAN, Empty, Loading, Modal, Pill } from "../components/ui";
 import {
   deviceColor,
-  deviceIcon,
+  deviceIconName,
   fmtDateTime,
   vnd,
   vndShort,
 } from "../lib/format";
+import { Icon } from "../components/icons";
 import { useAuth } from "../auth/AuthContext";
 
 const WHEN_TYPES = [
@@ -235,7 +236,7 @@ function RuleBuilder({ devices, onClose, onSaved }) {
           >
             {targets.length === 0 && <option value="">No controllable devices</option>}
             {targets.map((d) => (
-              <option key={d.id} value={d.id}>{deviceIcon(d.type)} {d.name} · {d.room}</option>
+              <option key={d.id} value={d.id}>{d.name} · {d.room}</option>
             ))}
           </select>
         </div>
@@ -286,7 +287,7 @@ function RuleBuilder({ devices, onClose, onSaved }) {
                 <select value={occSensor} onChange={(e) => { setOccSensor(e.target.value); dirty(); }}>
                   {sensors.length === 0 && <option value="">No sensors available</option>}
                   {sensors.map((d) => (
-                    <option key={d.id} value={d.id}>{deviceIcon(d.type)} {d.name} · {d.room}</option>
+                    <option key={d.id} value={d.id}>{d.name} · {d.room}</option>
                   ))}
                 </select>
               </div>
@@ -330,7 +331,7 @@ function RuleBuilder({ devices, onClose, onSaved }) {
                 <label className="field">Device</label>
                 <select value={stDevice} onChange={(e) => { setStDevice(e.target.value); dirty(); }}>
                   {devices.map((d) => (
-                    <option key={d.id} value={d.id}>{deviceIcon(d.type)} {d.name} · {d.room}</option>
+                    <option key={d.id} value={d.id}>{d.name} · {d.room}</option>
                   ))}
                 </select>
               </div>
@@ -622,7 +623,7 @@ function RuleCard({ rule, deviceMap, onToggle, onAuto, onHistory, onDelete }) {
       <div className="between" style={{ alignItems: "flex-start" }}>
         <div style={{ minWidth: 0 }}>
           <div className="row" style={{ gap: 8, marginBottom: 4 }}>
-            <span style={{ fontSize: 16 }}>{deviceIcon(dev?.type)}</span>
+            <Icon name={deviceIconName(dev?.type)} size={16} />
             <h2 style={{ fontSize: 15.5 }}>{rule.name}</h2>
           </div>
           <div className="muted" style={{ fontSize: 12.5 }}>
@@ -751,11 +752,11 @@ export default function Rules() {
   return (
     <div className="stack" style={{ gap: 20 }}>
       <div className="grid cols-4">
-        <BAN label="Active rules" value={enabledCount} accent="blue" icon="⚙️"
+        <BAN label="Active rules" value={enabledCount} accent="blue" icon={<Icon name="sliders" size={20} />}
           sub={`${rules.length} total`} />
-        <BAN label="Auto-actions" value={autoCount} accent="orange" icon="🤖"
+        <BAN label="Auto-actions" value={autoCount} accent="orange" icon={<Icon name="bot" size={20} />}
           sub="Apply automatically" />
-        <BAN label="Est. monthly saving" value={vndShort(totalSaving)} accent="green" icon="💰"
+        <BAN label="Est. monthly saving" value={vndShort(totalSaving)} accent="green" icon={<Icon name="wallet" size={20} />}
           sub="From active rules" />
         <div className="card ban" style={{ justifyContent: "center" }}>
           <button className="btn btn-primary" onClick={() => setBuilderOpen(true)}>

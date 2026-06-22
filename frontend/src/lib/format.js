@@ -30,8 +30,9 @@ const TYPE_COLOR = {
 };
 export const deviceColor = (type) => TYPE_COLOR[type] || OKABE_ITO.black;
 
-const TYPE_ICON = { plug: "🔌", bulb: "💡", fan: "🌀", ac: "❄️", sensor: "📟" };
-export const deviceIcon = (type) => TYPE_ICON[type] || "⚡";
+const TYPE_ICON = { plug: "plug", bulb: "bulb", fan: "fan", ac: "snowflake", sensor: "sensor" };
+// Returns an icon name for <Icon name=.. />; see components/icons.jsx.
+export const deviceIconName = (type) => TYPE_ICON[type] || "bolt";
 
 export const vnd = (n) =>
   new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 0 }).format(Math.round(n || 0)) + " ₫";

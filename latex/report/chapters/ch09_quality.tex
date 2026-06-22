@@ -7,7 +7,7 @@ positions the project's testing effort within the classical V-model, and then
 demonstrates \emph{both} families of dynamic testing required of a rigorous
 verification campaign: black-box (specification-based) testing and white-box
 (structure-based) testing. The discussion is grounded in the project's
-\textbf{61 automated tests} and concludes with a requirements-to-tests
+\textbf{64 automated tests} and concludes with a requirements-to-tests
 traceability summary and a forward-looking classification of anticipated
 maintenance.
 
@@ -15,7 +15,7 @@ maintenance.
 \label{sec:qa-vv}
 
 Following the IEEE Standard Glossary of Software Engineering Terminology
-(IEEE 610.12), \emph{software quality} is the degree to which a system meets
+(IEEE~610.12)~\cite{ieee610}, \emph{software quality} is the degree to which a system meets
 specified requirements and, in turn, the degree to which it meets stated and
 implied user needs and expectations. Quality is therefore not a single attribute
 but a composite of functional correctness together with non-functional
@@ -110,7 +110,7 @@ the design chapter (Figure~\ref{fig:seq-control}).
 \section{Test Strategy and Levels}
 \label{sec:qa-strategy}
 
-The automated suite comprises \textbf{61 tests}. It runs in-process against the
+The automated suite comprises \textbf{64 tests}. It runs in-process against the
 application's public interface using an in-memory test harness, requiring no live
 server, network or hardware; a disposable database is recreated for each run, so
 the suite is fully deterministic. The split between levels is physical: pure-logic
@@ -122,7 +122,7 @@ $\langle$input, expected outcome$\rangle$: an input (or input sequence) is appli
 and the actual result is compared against an \emph{expected output that is defined
 in advance}, never inferred after observing the program. A collection of such
 cases that share a fixture and a target constitutes a \emph{test suite} --- the
-project organises its tests into eight such suites, each devoted to one
+project organises its tests into nine such suites, each devoted to one
 cross-cutting concern. The strategy observes three classical testing principles:
 
 \begin{itemize}[leftmargin=1.4em]
@@ -136,12 +136,12 @@ cross-cutting concern. The strategy observes three classical testing principles:
         accidental breakage.
 \end{itemize}
 
-Table~\ref{tab:levels} summarises how the 61 tests distribute across the four
+Table~\ref{tab:levels} summarises how the 64 tests distribute across the four
 levels.
 
 \begin{table}[htbp]
 \centering
-\caption{Distribution of the 61 automated tests across V-model levels.}
+\caption{Distribution of the 64 automated tests across V-model levels.}
 \label{tab:levels}
 \begin{tabularx}{\textwidth}{@{}l L{0.52\textwidth} Y@{}}
 \toprule
@@ -361,7 +361,7 @@ branches of the white-box CFG.
 \section{Results and Traceability}
 \label{sec:qa-results}
 
-The full suite passes: \textbf{61 tests, 61 passed}. Because tests are derived
+The full suite passes: \textbf{64 tests, 64 passed}. Because tests are derived
 from the specification, every requirement family is traceable to at least one
 executable check, and conversely every test traces back to a requirement.
 Table~\ref{tab:trace} summarises the mapping from requirement families to

@@ -6,7 +6,8 @@ import {
 import { api } from "../api/client";
 import { useLiveFeed } from "../api/ws";
 import { BAN, Loading } from "../components/ui";
-import { vnd, vndShort, kwh, watts, deviceColor, deviceIcon, OKABE_ITO } from "../lib/format";
+import { Icon } from "../components/icons";
+import { vnd, vndShort, kwh, watts, deviceColor, deviceIconName, OKABE_ITO } from "../lib/format";
 
 export default function Dashboard() {
   const [dash, setDash] = useState(null);
@@ -44,13 +45,13 @@ export default function Dashboard() {
   return (
     <div className="stack" style={{ gap: 20 }}>
       <div className="grid cols-4">
-        <BAN label="Live power" value={Math.round(liveTotal)} unit="W" accent="blue" icon="⚡"
+        <BAN label="Live power" value={Math.round(liveTotal)} unit="W" accent="blue" icon={<Icon name="bolt" size={20} />}
           sub={`${dash.online_devices}/${dash.total_devices} devices online`} />
-        <BAN label="Energy today" value={dash.kwh_today.toFixed(1)} unit="kWh" accent="orange" icon="🔋"
+        <BAN label="Energy today" value={dash.kwh_today.toFixed(1)} unit="kWh" accent="orange" icon={<Icon name="battery" size={20} />}
           sub={`${kwh(dash.kwh_cycle)} this cycle`} />
-        <BAN label="Projected bill" value={vndShort(dash.estimated_bill_vnd)} accent="red" icon="🧾"
+        <BAN label="Projected bill" value={vndShort(dash.estimated_bill_vnd)} accent="red" icon={<Icon name="receipt" size={20} />}
           sub={`${dash.tariff_name}`} />
-        <BAN label="Saved this cycle" value={vndShort(dash.savings_cycle_vnd)} accent="green" icon="💰"
+        <BAN label="Saved this cycle" value={vndShort(dash.savings_cycle_vnd)} accent="green" icon={<Icon name="wallet" size={20} />}
           sub="From active saving rules" />
       </div>
 
@@ -84,7 +85,7 @@ export default function Dashboard() {
             {top.map((t) => (
               <div key={t.device_id}>
                 <div className="between" style={{ fontSize: 13.5, marginBottom: 5 }}>
-                  <span style={{ fontWeight: 600 }}>{deviceIcon(t.type)} {t.name}</span>
+                  <span className="row" style={{ fontWeight: 600, gap: 7 }}><Icon name={deviceIconName(t.type)} size={15} />{t.name}</span>
                   <span className="tabular muted">{kwh(t.kwh, 2)} · {vndShort(t.cost_vnd)}</span>
                 </div>
                 <div style={{ background: "#eef1f5", borderRadius: 999, height: 9 }}>
@@ -105,7 +106,7 @@ export default function Dashboard() {
           {devices.map((d) => (
             <div key={d.device_id} className="card" style={{ padding: 16, boxShadow: "none", background: "var(--c-surface-2)" }}>
               <div className="between">
-                <span style={{ fontSize: 22 }}>{deviceIcon(d.type)}</span>
+                <Icon name={deviceIconName(d.type)} size={22} />
                 <span className="row" style={{ gap: 6, fontSize: 12 }}>
                   <span className={`dot ${d.online ? "dot-on" : "dot-off"}`} />
                   {d.online ? "online" : "offline"}
