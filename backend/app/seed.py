@@ -145,7 +145,8 @@ def _seed_unit(
     db, unit_name: str, email: str, full_name: str, role: Role, start: datetime, end: datetime
 ) -> None:
     """Create one unit (Home) with its occupant, default device package, back-dated
-    telemetry, control grants, an accepted saving rule and habit recommendations."""
+    telemetry, control grants and an accepted saving rule. Habit recommendations are
+    NOT pre-generated: they are produced on demand when the resident runs ``analyze``."""
     home = Home(name=unit_name, billing_cycle_day=1, locale="vi")
     db.add(home)
     db.flush()
@@ -181,12 +182,10 @@ def _seed_unit(
     db.add(Notification(
         home_id=home.id, type=NotificationType.MONTHLY_REPORT,
         title="Welcome to your Smart Home Energy Optimizer",
-        body="We analysed your last 3 weeks of usage and prepared saving ideas for you.",
+        body="You have 3 weeks of usage history — open Recommendations and run "
+             "“Analyze my usage” to get personalised saving ideas.",
     ))
     db.commit()
-
-    from .services.recommendation_service import RecommendationService
-    RecommendationService(db).analyze(home.id)
 
 
 def _seed_accepted_rule_and_savings(db, home: Home, tv_plug: Device) -> None:

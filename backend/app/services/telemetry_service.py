@@ -37,20 +37,23 @@ class TelemetryService:
         """REQ-4.1.4: mark a device unreachable if silent for > threshold."""
         threshold = timedelta(seconds=settings.offline_threshold_seconds)
         ts = now()
+        events: list[tuple] = []
         for device in self.devices.by_home(home_id):
             silent = (ts - device.last_seen_at) > threshold
             forced = (device.state or {}).get("forced_offline", False)
             should_be_online = not silent and not forced
             if device.online and not should_be_online:
                 device.online = False
-                bus.publish(
-                    EventType.DEVICE_OFFLINE,
-                    {"device_id": device.id, "home_id": home_id, "name": device.name},
-                )
+                events.append((EventType.DEVICE_OFFLINE,
+                               {"device_id": device.id, "home_id": home_id, "name": device.name}))
             elif not device.online and should_be_online:
                 device.online = True
-                bus.publish(EventType.DEVICE_ONLINE, {"device_id": device.id, "home_id": home_id})
+                events.append((EventType.DEVICE_ONLINE, {"device_id": device.id, "home_id": home_id}))
         self.db.commit()
+        # Publish only after commit: the DEVICE_OFFLINE notification subscriber writes on
+        # its own connection and would self-deadlock against this open write transaction.
+        for event_type, payload in events:
+            bus.publish(event_type, payload)
 
     # ----------------------------------------------------------- dashboard
     def dashboard(self, home_id: int) -> DashboardOut:

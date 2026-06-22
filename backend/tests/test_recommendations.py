@@ -2,6 +2,8 @@
 
 
 def test_recommendations_are_readable_and_explainable(client, dev_headers):
+    # Recommendations are produced on demand (the seed no longer pre-generates them).
+    client.post("/api/recommendations/analyze", headers=dev_headers)
     recs = client.get("/api/recommendations", headers=dev_headers).json()
     assert len(recs) >= 1
     r = recs[0]
@@ -14,7 +16,7 @@ def test_recommendations_are_readable_and_explainable(client, dev_headers):
 
 def test_recommendations_ranked_and_capped(client, dev_headers):
     # REQ-4.4.3: ranked by VND saving, at most five.
-    recs = client.get("/api/recommendations", headers=dev_headers).json()
+    recs = client.post("/api/recommendations/analyze", headers=dev_headers).json()
     vals = [r["estimated_monthly_saving_vnd"] for r in recs]
     assert vals == sorted(vals, reverse=True)
     assert len(recs) <= 5
@@ -31,7 +33,7 @@ def test_new_device_without_history_yields_no_recommendation(client, dev_headers
 
 def test_accept_recommendation_becomes_rule(client, dev_headers):
     # REQ-4.4.4: explicit acceptance turns it into a rule.
-    recs = client.get("/api/recommendations", headers=dev_headers).json()
+    recs = client.post("/api/recommendations/analyze", headers=dev_headers).json()
     rec = recs[0]
     res = client.post(f"/api/recommendations/{rec['id']}/accept", headers=dev_headers,
                       json={"auto_apply": False})
@@ -46,7 +48,7 @@ def test_accept_recommendation_becomes_rule(client, dev_headers):
 
 def test_dismiss_suppresses_recommendation(client, dev_headers):
     # REQ-4.4.5: dismissed -> not shown again for the same device/condition.
-    recs = client.get("/api/recommendations", headers=dev_headers).json()
+    recs = client.post("/api/recommendations/analyze", headers=dev_headers).json()
     assert recs
     rec = recs[-1]
     client.post(f"/api/recommendations/{rec['id']}/dismiss", headers=dev_headers)

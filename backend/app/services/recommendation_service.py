@@ -69,12 +69,16 @@ class RecommendationService:
                 )
             )
             created.append(rec)
+        self.db.commit()
+        # Publish only AFTER committing: the notification subscriber writes on its own
+        # connection, which would otherwise self-deadlock against this still-open write
+        # transaction on the single SQLite file ("database is locked").
+        for rec in created:
             bus.publish(
                 EventType.RECOMMENDATION_READY,
                 {"home_id": home_id, "recommendation_id": rec.id, "title": "New saving idea: " + rec.title,
                  "body": f"Estimated saving ≈ {rec.estimated_monthly_saving_vnd:,.0f} VND/month"},
             )
-        self.db.commit()
         self._enforce_max_active(home_id)
         return self.list_active(home_id)
 
